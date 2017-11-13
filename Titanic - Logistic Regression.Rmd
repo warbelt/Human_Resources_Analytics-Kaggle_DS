@@ -17,6 +17,13 @@ options(warn = -1)
 ```
 
 
+### Version 2
+ifg elese
+
+{
+asda
+
+
 # Intro to Logistic Regression Analysis
 
 The predictors can be continuous, categorical or a mix of both.
