@@ -1,0 +1,315 @@
+---
+title: '**Human Resources Analytics - Exploratory Analysis**'
+author: "Data Analysis Team"
+date: "27 November 2017"
+output:
+  pdf_document:
+    highlight: zenburn
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Content
+
+**1 -** Load the data
+
+**2 -** Data cleaning
+
+**3 -** Data exploration
+
+##  3.1 - Data overview
+##  3.2 - Correlation matrix
+##  3.3 - Exploration through visualisation
+##  3.4 - Exploration of clusters or leavers
+
+**4 -** Feature selection with Boruta analysis
+
+# 1 - Load the data
+
+
+### Load the Human Resources Analytics database
+```{r}
+db <- read.csv("./HR_comma_sep_v2.csv") # Remeber to set the working directory for this line of code to work
+```
+
+# 2 - Data cleaning
+Check for any missing values in the dataset:
+```{r}
+sapply(db, function(x) sum(is.na(x)))
+```
+Now we have confirmed that there are no missing values in our variables.
+
+# 3 - Data exploration
+
+# 3.1 - Data overview
+```{r}
+# This dataset has about 15,000 employees and 10 variables
+dim(db)
+
+# The following displays the type of each variable:
+str(db)
+
+# Below we can see the statistical summary of each variable:
+summary(db)
+```
+
+How many leavers are there?
+```{r}
+table(db$left) # number employees for each level
+prop.table(table(db$left)) # proportion of employees for each level
+round(prop.table(table(db$left)),2) # rounded proportion of employees for each level
+```
+In this dataset there are 3,571 leavers and 11,428 stayers.
+The turnover rate is 24% and the retention rate is 76%.
+
+The below table displays a summary of the variables splitting by Leavers vs Stayers:
+```{r}
+cor_vars <- db[,c("satisfaction_level","last_evaluation","number_project","average_montly_hours","time_spend_company","Work_accident","left","promotion_last_5years","projects_per_year")]
+aggregate(cor_vars[,c("satisfaction_level","last_evaluation","number_project","average_montly_hours","time_spend_company","Work_accident","promotion_last_5years","projects_per_year")],by=list(Category=cor_vars$left),FUN=mean)
+```
+
+Key higlights:
+1 - The turnover rate is 24%
+2 - There are approximately 15k employees and 10 variables
+3 - The satisfaction level is 61%
+4 - Leavers show less satisfaction level, higher monthly hours, higher tenure, lower work accidents, less promotions and less projects per year
+
+# 3.2 - Correlation matrix
+```{r}
+# The below code will install the corrplot package if it doesn't exist, and then load it
+if (!require(corrplot)) install.packages("corrplot")
+library(corrplot)
+```
+
+Visual correlation matrix:
+```{r}
+cor_vars_summary <- cor(cor_vars)
+
+corrplot(cor_vars_summary,method="circle",tl.cex=0.5)
+```
+
+Tabular correlation matrix:
+```{r}
+corrplot(cor_vars_summary,method="number",tl.cex=0.5)
+```
+
+Mixed correlation matrix:
+```{r}
+corrplot.mixed(cor_vars_summary,tl.cex=0.6)
+```
+
+Moderately Positively Correlated Variables:
+- number_project vs last_evaluation: 0.35
+- number_project vs average_monthly_hours: 0.42
+- number_project vs projects_per_year: 0.55
+
+Moderately Negatively Correlated Variables:
+- time_spend_company vs projects_per_year: -0.58
+- left vs satisfaction_level: -0.39
+
+# 3.3 - Exploration through visualisation
+
+Distribution plots (histograms):
+```{r}
+attach(db) # In this way we avoid including the database name in every line of code
+par(mfrow=c(3,3))
+hist(satisfaction_level,main="Satisfaction Level" ,col="green")
+hist(last_evaluation,main= "Last Evaluation",col="blue")
+hist(number_project,main="Number of Projects", col="red")
+hist(average_montly_hours,main="Average Monthly Hours", col="pink")
+hist(time_spend_company,main="Time Spent in the Company",col="grey")
+hist(Work_accident,main="Work Accident",col="purple")
+hist(promotion_last_5years,main="Promotion Last 5 Years",col="brown")
+hist(projects_per_year,main="Projects per Year",col="brown")
+```
+
+Stacked bar plots:
+```{r}
+# The below code will install the ggplot package if it doesn't exist, and then load it
+if (!require(ggplot2)) install.packages("ggplot2")
+library(ggplot2)
+
+ggplot_satisfaction_level<-ggplot(db,aes(x=satisfaction_level,fill=factor(left)))+
+  geom_bar(stat='count',position='stack')+
+  scale_x_continuous(breaks=c(1:3))+
+  labs(x="Satisfaction Level")
+
+ggplot_last_evaluation<-ggplot(db,aes(x=last_evaluation,fill=factor(left)))+
+  geom_bar(stat='count',position='stack')+
+  scale_x_continuous(breaks=c(1:3))+
+  labs(x="Last Evaluation")
+
+ggplot_NumberProjects<-ggplot(db,aes(x=number_project,fill=factor(left)))+
+  geom_bar(stat='count',position='stack')+
+  scale_x_continuous(breaks=c(1:3))+
+  labs(x="Number of Projects")
+
+ggplot_avghours<-ggplot(db,aes(x=average_montly_hours,fill=factor(left)))+
+  geom_bar(stat='count',position='stack')+
+  scale_x_continuous(breaks=c(1:3))+
+  labs(x="Average Monthly Hours")
+
+ggplot_time_company<-ggplot(db,aes(x=time_spend_company,fill=factor(left)))+
+  geom_bar(stat='count',position='stack')+
+  scale_x_continuous(breaks=c(1:3))+
+  labs(x="Time Spent Company")
+
+ggplot_work_accident<-ggplot(db,aes(x=Work_accident,fill=factor(left)))+
+  geom_bar(stat='count',position='stack')+
+  scale_x_continuous(breaks=c(1:3))+
+  labs(x="Work Accident")
+
+ggplot_promotion5years<-ggplot(db,aes(x=promotion_last_5years,fill=factor(left)))+
+  geom_bar(stat='count',position='stack')+
+  scale_x_continuous(breaks=c(1:3))+
+  labs(x="Promotion Last 5 Years")
+
+ggplot_projectsYear<-ggplot(db,aes(x=projects_per_year,fill=factor(left)))+
+  geom_bar(stat='count',position='stack')+
+  scale_x_continuous(breaks=c(1:3))+
+  labs(x="Projects per Year")
+
+# The below code will install the gridExtra package if it doesn't exist, and then load it
+if (!require(gridExtra)) install.packages("gridExtra")
+library(gridExtra)
+
+
+grid.arrange(ggplot_satisfaction_level, ggplot_last_evaluation,ggplot_NumberProjects,
+             ggplot_avghours,ggplot_time_company,ggplot_work_accident,
+             ggplot_projectsYear, ncol=3,nrow=3)
+```
+
+Subset the data for the density plots:
+```{r}
+left_data<-subset(db,left==1)
+stay_data<-subset(db,left==0)
+```
+
+KEY HIGHLIGHTS:
+
+1 - Satisfacion Level: most leavers have either a very low satisfaction level or medium satisfaction. Although there in important chunk of leavers with high turnover as well.
+
+This can be more clearly seen in the following density plot:
+```{r}
+ggplot() + geom_density(aes(x=satisfaction_level),colour="blue",data=left_data) +
+  geom_density(aes(x=satisfaction_level), colour="red",data=stay_data)
+```
+
+2 - Last Evaluation: most leavers have either a low or high evaluation score.
+
+This can be more clearly seen in the following density plot:
+```{r}
+ggplot() + geom_density(aes(x=last_evaluation),colour="blue",data=left_data) +
+  geom_density(aes(x=last_evaluation), colour="red",data=stay_data)
+```
+
+3 - Number Projects: employees with too few (<2) or too many (>4) projects leave more.
+
+This can be more clearly seen in the following density plot:
+```{r}
+ggplot() + geom_density(aes(x=number_project),colour="blue",data=left_data) +
+  geom_density(aes(x=number_project), colour="red",data=stay_data)
+```
+
+4 - Average Monthly Hours: employees with low (<150) or high (>250) numbers of hours leave the organisation.
+
+This can be more clearly seen in the following density plot:
+```{r}
+ggplot() + geom_density(aes(x=average_montly_hours),colour="blue",data=left_data) +
+  geom_density(aes(x=average_montly_hours), colour="red",data=stay_data)
+```
+
+5 - Time Spent Company: employees with a tenure of 3-6 years leave more the organisation.
+
+This can be more clearly seen in the following density plot:
+```{r}
+ggplot() + geom_density(aes(x=time_spend_company),colour="blue",data=left_data) +
+  geom_density(aes(x=time_spend_company), colour="red",data=stay_data)
+```
+
+6 - Work Accident: leavers are more likely to not to have had a work accident.
+
+This can be more clearly seen in the following density plot:
+
+```{r}
+ggplot() + geom_density(aes(x=Work_accident),colour="blue",data=left_data) +
+  geom_density(aes(x=Work_accident), colour="red",data=stay_data)
+```
+
+Turnover VS Salary Level:
+```{r}
+db$salary<-factor(db$salary,levels=c("low","medium","high")) # Manual ordering of the levels of the variable Salary
+
+ggplot(db,aes(x=salary,fill=factor(left)))+
+  geom_bar(stat='count',position='dodge')
+```
+We see how most leavers have a low or medium salary
+
+Turnover VS Department:
+```{r}
+ggplot(db,aes(x=department,fill=factor(left)))+
+  geom_bar(stat='count',position='dodge')
+```
+Most leavers come from the Sales, Support and Technical departments.
+
+# 3.4 - Exploration of clusters or leavers
+```{r}
+ggplot(db,aes(satisfaction_level,last_evaluation,color=left))+
+  geom_point(shape=16,size=5,show.legend = TRUE)+
+  theme_minimal()+
+  scale_color_gradient(low="#0091ff",high="#f0650e")
+```
+
+There are 3 distinct clusters for employees who left the company:
+- Cluster 1 (Hard-working and Sad Employee): Satisfaction was below 0.2 and evaluations were greater than 0.75.
+- Cluster 2 (Bad and Sad Employee): Satisfaction between about 0.35~0.45 and evaluations below ~0.58.
+- Cluster 3 (Hard-working and Happy Employee): Satisfaction between 0.7~1.0 and evaluations were greater than 0.8. 
+
+# 4 - Feature selection with Boruta analysis
+
+Feature importance:
+
+Boruta is a feature selection algorithm. Precisely, it works as a wrapper algorithm around Random Forest. This package derive its name from a demon in Slavic mythology who dwelled in pine forests. Feature selection is a crucial step in predictive modeling. This technique achieves supreme importance when a data set comprised of several variables is given for model building. Boruta can be your algorithm of choice to deal with such data sets. Particularly when one is interested in understanding the mechanisms related to the variable of interest, rather than just building a black box predictive model with good prediction accuracy.
+
+How does it work?
+
+Below is the step wise working of boruta algorithm:
+
+Firstly, it adds randomness to the given data set by creating shu???led copies of all features (which are called shadow features). Then, it trains a random forest classi???er on the extended data set and applies a feature importance measure (the default is Mean Decrease Accuracy) to evaluate the importance of each feature where higher means more important.
+
+At every iteration, it checks whether a real feature has a higher importance than the best of its shadow features (i.e. whether the feature has a higher Z score than the maximum Z score of its shadow features) and constantly removes features which are deemed highly unimportant.
+
+Finally, the algorithm stops either when all features gets con???rmed or rejected or it reaches a speci???ed limit of random forest runs.
+
+```{r}
+# The below code will install the boruta package if it doesn't exist, and then load it
+if (!require(Boruta)) install.packages("Boruta")
+library(Boruta)
+```
+
+The following code will perform the Boruta analysis:
+```{r}
+db$left<-as.factor(db$left)
+boruta.train <- Boruta(left~., data = db, doTrace = 2)
+
+print(boruta.train)
+plot(boruta.train, xlab = "", xaxt = "n")
+
+lz<-lapply(1:ncol(boruta.train$ImpHistory),function(i)
+  boruta.train$ImpHistory[is.finite(boruta.train$ImpHistory[,i]),i])
+names(lz) <- colnames(boruta.train$ImpHistory)
+Labels <- sort(sapply(lz,median))
+axis(side = 1,las=2,labels = names(Labels),
+     at = 1:ncol(boruta.train$ImpHistory), cex.axis = 0.7)
+```
+
+Boruta analysis result:
+- The 10 variables are deemed important.
+- The most important variables are satisfaction level, last evaluation and monthly hours worked.
+
+Boruta is an easy to use package as there aren't many parameters to tune / remember. You shouldn't use a data set with missing values to check important variables using Boruta. It'll blatantly throw errors.
+
+A good explanation of Boruta can be found here: www.analyticsvidhya.com/blog/2016/03/select-important-variables-boruta-package/
