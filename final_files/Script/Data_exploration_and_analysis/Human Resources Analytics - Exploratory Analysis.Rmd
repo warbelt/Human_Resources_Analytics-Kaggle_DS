@@ -14,25 +14,25 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Content
 
-**1 -** Load the data
+## 1 - Load the data
 
-**2 -** Data cleaning
+## 2 - Data cleaning
 
-**3 -** Data exploration
+## 3 - Data exploration
 
-##  3.1 - Data overview
-##  3.2 - Correlation matrix
-##  3.3 - Exploration through visualisation
-##  3.4 - Exploration of clusters or leavers
-
-**4 -** Feature selection with Boruta analysis
+### 3.1 - Data overview
+### 3.2 - Correlation matrix
+### 3.3 - Exploration through visualisation
+### 3.4 - Exploration of clusters or leavers
+##  4 - Feature selection with Boruta analysis
 
 # 1 - Load the data
 
 
 ### Load the Human Resources Analytics database
-```{r}
-db <- read.csv("./HR_comma_sep_v2.csv") # Remeber to set the working directory for this line of code to work
+```{r warning=FALSE, message=FALSE}
+library(readr)
+db <- read_csv("~/Human_Resources_Analytics-Kaggle_DS/final_files/databases/HR_comma_sep_v2.csv") # Remeber to set the working directory for this line of code to work
 ```
 
 # 2 - Data cleaning
@@ -44,7 +44,7 @@ Now we have confirmed that there are no missing values in our variables.
 
 # 3 - Data exploration
 
-# 3.1 - Data overview
+## 3.1 - Data overview
 ```{r}
 # This dataset has about 15,000 employees and 10 variables
 dim(db)
@@ -77,8 +77,8 @@ Key higlights:
 3 - The satisfaction level is 61%
 4 - Leavers show less satisfaction level, higher monthly hours, higher tenure, lower work accidents, less promotions and less projects per year
 
-# 3.2 - Correlation matrix
-```{r}
+## 3.2 - Correlation matrix
+```{r warning=FALSE, message=FALSE}
 # The below code will install the corrplot package if it doesn't exist, and then load it
 if (!require(corrplot)) install.packages("corrplot")
 library(corrplot)
@@ -110,9 +110,29 @@ Moderately Negatively Correlated Variables:
 - time_spend_company vs projects_per_year: -0.58
 - left vs satisfaction_level: -0.39
 
-# 3.3 - Exploration through visualisation
+We made a corrplot in order to see the relation between our variables. Now we will do a scatterplot too. To do this, we need change our categorical variables into numeric variables.
 
-Distribution plots (histograms):
+```{r warning=FALSE, message=FALSE}
+require(car)
+db$salarynum<-recode(db$salary, "'low'=1")
+db$salarynum<-recode(db$salarynum, "'medium'=2")
+db$salarynum<-recode(db$salarynum, "'high'=3")
+db$salarynum<-as.numeric(db$salarynum)
+
+library(dplyr)
+library(graphics)
+library(corrplot)
+HR_dataset_corrplot <- select(db, -department, -salary)
+HR_correlation <- cor(HR_dataset_corrplot)
+library(corrplot)
+
+par(mfrow=c(1,1))
+pairs(HR_correlation)
+```
+
+## 3.3 - Exploration through visualisation
+
+### DISTRIBUTION PLOTS (HISTOGRAMS):
 ```{r}
 attach(db) # In this way we avoid including the database name in every line of code
 par(mfrow=c(3,3))
@@ -126,8 +146,8 @@ hist(promotion_last_5years,main="Promotion Last 5 Years",col="brown")
 hist(projects_per_year,main="Projects per Year",col="brown")
 ```
 
-Stacked bar plots:
-```{r}
+### STACKED BAR PLOTS:
+```{r warning=FALSE, message=FALSE}
 # The below code will install the ggplot package if it doesn't exist, and then load it
 if (!require(ggplot2)) install.packages("ggplot2")
 library(ggplot2)
@@ -255,7 +275,160 @@ ggplot(db,aes(x=department,fill=factor(left)))+
 ```
 Most leavers come from the Sales, Support and Technical departments.
 
-# 3.4 - Exploration of clusters or leavers
+### BOXPLOTS:
+
+Now we are going to do some boxplots of the cuantitative variables, to have a "more accurate" plot with more information like the median or the first and third quartile. We can see too the normality of variables.
+
+### Single Boxplots
+
+With the single boxplots we can see general visual representation of each variable.
+
+```{r message=FALSE, warning=FALSE}
+attach(db)
+par(mfrow=c(2,3))
+satisbox<-boxplot(satisfaction_level, col = "red", ylim= c(0,1), main = "Boxplot of Satisfaction_level")
+evalbox<-boxplot(last_evaluation, col = "purple", ylim= c(0,1), main = "Boxplot of Last_evaluation")
+numbox<-boxplot(number_project, col="green", main = "Boxplot of number_project")
+averbox<-boxplot(average_montly_hours, col = "pink", main = "Boxplot of Average_monthly_hours")
+timesbox<-boxplot(time_spend_company, col = "blue", main = "Boxplot of time_spend_company")
+proyebox<-boxplot(projects_per_year, col = "orange", main = "Boxplot of project_per_year")
+```
+
+We can compare this boxplots with the histograms.
+
+```{r}
+par(mfrow=c(1,2))
+hist(satisfaction_level, col = "red", xlim = c(0,1))
+boxplot(satisfaction_level, col = "red", ylim= c(0,1), main = "Boxplot of Satisfaction_level")
+hist(last_evaluation, col = "purple", xlim = c(0,1))
+boxplot(last_evaluation, col = "purple", ylim= c(0,1), main = "Boxplot of Last_evaluation")
+hist(number_project, col="green", breaks = 7)
+boxplot(number_project, col="green", main = "Boxplot of number_project")
+hist(average_montly_hours, col = "pink", xlim= c(50, 350))
+boxplot(average_montly_hours, col = "pink", main = "Boxplot of Average_monthly_hours")
+hist(time_spend_company, col = "blue", breaks = 8)
+boxplot(time_spend_company, col = "blue", main = "Boxplot of time_spend_company")
+hist(projects_per_year, col = "orange", xlim= c(0,3))
+boxplot(projects_per_year, col = "orange", main = "Boxplot of project_per_year")
+```
+
+
+As we can see, there are only two variables that aren't normal: time_spend_company and project_per_year. 
+
+
+###Relation boxplots 
+
+Satisfaction level
+
+7 - The people that had an accident, has a better satisfaction level, and as said before, leave less than the people that hadn´t. Maybe this is because they are less burned.
+
+```{r}
+boxplot(satisfaction_level~Work_accident,data=db, main="Satisfaction Level", 
+        xlab="Work Accident", ylab="Satisfaction Level")
+```
+        
+8 - As said before, leavers have a low or medium satisfaction level. We can see here that the median of the satisfaction level of the leavers is lower than non leavers.
+
+```{r}
+boxplot(satisfaction_level~left,data=db, main="Satisfaction Level", 
+        xlab="left", ylab="Satisfaction Level")
+```
+        
+9 - The people that were recently promoted is slightly happier.
+
+```{r}
+boxplot(satisfaction_level~promotion_last_5years,data=db, main="Satisfaction Level", 
+        xlab="promotion in the last 5 years", ylab="Satisfaction Level")
+```
+        
+10 - Besides of leaving the company, this plot shows that the people with less salary is less happy in the work.
+
+```{r}
+boxplot(satisfaction_level~salary,data=db, main="Satisfaction Level", 
+        xlab="Salary", ylab="Satisfaction Level")
+```
+
+Last evaluation
+
+10 - This plot isn�t very reliable because the leavers population is very asymetric. Besides that, the plot shows us that the people with the best performance is the people that it's going from the company. Before it was seen that the people with low evaluation leaves too.
+
+```{r}
+boxplot(last_evaluation~left,data=db, main="Last evaluation", 
+        xlab="left", ylab="last evaluation")
+```     
+
+Monthly hours
+
+11 - The same reliabilility with this plot. The people with more montly hours, is probably burned, and for that leaves the company. As said before, the people with little hours leaves too.
+
+```{r}
+boxplot(average_montly_hours~left,data=db, main="Average Montly Hours", 
+        xlab="left", ylab="Average Montly Hours")
+```       
+
+
+Time in the company
+
+12 - The people who were more time in the company were probable more burned and left. There are outliers though. The people that has been more time in the company doesn´t leave it.
+
+```{r}
+boxplot(time_spend_company~left,data=db, main="time_spend_company", 
+        xlab="left", ylab="time_spend_company")
+```
+
+Projects per year
+
+13 - In general, they give more salary if you have mor projects per year.
+
+```{r}
+boxplot(projects_per_year~salary,data=db, main="projects_per_year", 
+        xlab="Salary", ylab="projects_per_year")
+```       
+
+## FREQUENCY TABLES
+
+Frequency tables are used to compare qualitative variables. In this case,  because of the different number of people in the left and not-left are so different, the chi-square method is inefficient. For that, we are going to do proportion tables.
+
+Left
+
+14 - Before it was said the department with more leavers. We will see now the proportion of them. In the management and RandD department there are less proportion of leavers. The department with more proportion of them, is the hr department. 
+
+```{r warning=FALSE, message=FALSE}
+attach(db)
+tabla<-xtabs(~left+department)
+ptabla<-prop.table(tabla, 2)
+ptabla
+summary(ptabla)
+```
+
+15 - Here we can see, as before, that when the people has more salary, there are less probability to left the company.
+
+```{r}
+tabla<-xtabs(~left+salary)
+ptabla<-prop.table(tabla, 2)
+ptabla
+summary(ptabla)
+```
+16 - Unless the people with 2 projects, when the people has more projects the probability of leaving increases, confirming what was said before.
+```{r}
+tabla<-xtabs(~left+number_project)
+ptabla<-prop.table(tabla, 2)
+ptabla
+summary(ptabla)
+```
+
+We can see that when the people have more salary, it is more probable that that employee has been promoted.
+```{r}
+tabla<-xtabs(~salary+promotion_last_5years)
+ptabla<-prop.table(tabla, 1)
+ptabla
+summary(ptabla)
+```
+
+
+In none of each analysis we have had a significant effect in the chi-squared analysis.
+
+## 3.4 - Exploration of clusters or leavers
 ```{r}
 ggplot(db,aes(satisfaction_level,last_evaluation,color=left))+
   geom_point(shape=16,size=5,show.legend = TRUE)+
@@ -284,14 +457,14 @@ At every iteration, it checks whether a real feature has a higher importance tha
 
 Finally, the algorithm stops either when all features gets con???rmed or rejected or it reaches a speci???ed limit of random forest runs.
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 # The below code will install the boruta package if it doesn't exist, and then load it
 if (!require(Boruta)) install.packages("Boruta")
 library(Boruta)
 ```
 
 The following code will perform the Boruta analysis:
-```{r}
+```{r warning=FALSE, message=FALSE}
 db$left<-as.factor(db$left)
 boruta.train <- Boruta(left~., data = db, doTrace = 2)
 
