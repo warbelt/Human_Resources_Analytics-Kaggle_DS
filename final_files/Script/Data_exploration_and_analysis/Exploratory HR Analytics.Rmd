@@ -1,5 +1,5 @@
 ---
-title: "Exploratory HR Analytics"
+title: "Human Resources analytics - Exploratory analysis + Biplot Analysis"
 author: "Daniel El Sabbagh Velasco"
 date: "20 de noviembre de 2017"
 output: html_document
