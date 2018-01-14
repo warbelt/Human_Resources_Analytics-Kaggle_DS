@@ -1,6 +1,6 @@
 ---
 title: "Biplot"
-author: "Roberto Díaz"
+author: "Roberto D?az"
 date: "16 de diciembre de 2017"
 output: pdf_document
 ---
@@ -46,6 +46,7 @@ cuanti$satisnom<-as.factor(cuanti$satisnom)
 
 #BIPLOT
 
+We use the command "scale" to standarize our data.
 
 ```{r}
 biplot<-PCA.Biplot(scale(cuanti[1:9]))
@@ -91,7 +92,7 @@ legend(x="topright", c("LOW", "MEDIUM", "HIGH"), pch=1, col=c("Green", "Blue", "
 
 #HJ BIPLOT
 
-An HJ-Biplot has a good representation on both variables and individuals, but it is supposed that it doesn´t represent well the original data.
+An HJ-Biplot has a good representation on both variables and individuals, but it is supposed that it doesn?t represent well the original data.
 ```{r}
 hjbiplot<-HJ.Biplot(scale(cuanti[1:9]))
 plot(hjbiplot)
