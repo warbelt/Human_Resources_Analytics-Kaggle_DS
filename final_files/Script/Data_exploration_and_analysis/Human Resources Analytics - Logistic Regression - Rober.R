@@ -36,7 +36,7 @@ summary(logistic)
 require(pscl)
 pR2(logistic)
 
-#Here we can analyze the McFadden index, that is 0.40. Our model is average.
+#Here we can analyze the McFadden index, that is 0.40. Our model is very good.
 
 ##PREDICTION OF THE LOGISTIC REGRESSION##
 

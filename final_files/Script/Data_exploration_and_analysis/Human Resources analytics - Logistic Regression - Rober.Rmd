@@ -1,6 +1,6 @@
 ---
 title: "Logistic Regression"
-author: "Roberto Díaz"
+author: "Roberto Diaz"
 date: "15 de diciembre de 2017"
 output: pdf_document
 ---
@@ -48,7 +48,7 @@ We can see that the department variable is not significant (unless the departmen
 require(pscl)
 pR2(logistic)
 ```
-Here we can analyze the McFadden index, that is 0.40. Our model is average.
+Here we can analyze the McFadden index, that is 0.40. Our model is very good.
 
 ##PREDICTION OF THE LOGISTIC REGRESSION
 Now we are going to do the prediction of the test database.
@@ -110,7 +110,7 @@ Here we can see the coefficients of the different variables in the model, and th
 
 #Test with only the significative variables
 
-Now we are going to remove the non significant variables to see if the model improves. We saw before that the department variable wasn´t significant.
+Now we are going to remove the non significant variables to see if the model improves. We saw before that the department variable wasn?t significant.
 
 ```{r warning=FALSE, message=FALSE}
 require(dplyr)
