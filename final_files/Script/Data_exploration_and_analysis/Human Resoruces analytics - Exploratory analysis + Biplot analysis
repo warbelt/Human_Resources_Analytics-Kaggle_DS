@@ -1,0 +1,146 @@
+---
+title: "Human Resources analytics - Exploratory analysis + Biplot Analysis"
+author: "Daniel El Sabbagh Velasco"
+date: "20 de noviembre de 2017"
+output: html_document
+---
+#LOADING DATASET
+
+```{r, message=FALSE, warning=FALSE}
+library(readr)
+HR_comma_sep <- read_csv("C:/Users/danie/Desktop/HUMAN RESOURCES ANALYTICS - EQUIPO ANALISIS DE DATOS/HR_comma_sep.csv")
+View(HR_comma_sep)
+```
+```{r}
+head(HR_comma_sep)
+```
+
+
+# MISSING DATA
+## We check the amount of missing data from our dataset
+
+```{r}
+which(is.na(HR_comma_sep))
+```
+
+## We can see that we don't have missing data in our dataset. 
+# CREATING NEW VARIABLES
+## It is interesting create a new variable that relates number_project and time_spend_company
+```{r, message=FALSE}
+library(dplyr)
+HR_dataset <- mutate(HR_comma_sep, project_per_year = number_project/time_spend_company)
+View(HR_dataset)
+```
+
+Now we can see the head of our dataset with the new variable: project_per_year
+```{r}
+head(HR_dataset)
+```
+
+# EXPLORING THE DATA
+
+We have around 15.000 employees in our company, and we know about them: satisfaction_level, last_evaluation, number_project, average_monthly_hours, time_spend_company, work_accident, left, promotion_last_5years, sales and salary. 
+We make a exploratory table: 
+
+```{r}
+summary(HR_dataset)
+```
+
+We can see that the mean of satisfaction_level is around 0.61, or the performance average is around 0.71. Also the average_monthly_hours is around 200, time_spend_company is around 3.498 years on average and project_per_year is around 1.21 on average. Besides around 14,4% of our workers have a work and 23,81% of our workers left the work and only the 0.021% of the workers had a promotion on the last five years. 
+
+## NORMALITY OF VARIABLES
+We check the normality of variables with two graphs: histograms and box-plot. 
+
+```{r}
+attach(HR_dataset)
+par(mfrow=c(1,2))
+hist(satisfaction_level, col = "red", xlim = c(0,1))
+boxplot(satisfaction_level, col = "red", ylim= c(0,1), main = "Boxplot of Satisfaction_level")
+hist(last_evaluation, col = "purple", xlim = c(0,1))
+boxplot(last_evaluation, col = "purple", ylim= c(0,1), main = "Boxplot of Last_evaluation")
+hist(number_project, col="green", breaks = 7)
+boxplot(number_project, col="green", main = "Boxplot of number_project")
+hist(average_montly_hours, col = "pink", xlim= c(50, 350))
+boxplot(average_montly_hours, col = "pink", main = "Boxplot of Average_monthly_hours")
+hist(time_spend_company, col = "blue", breaks = 8)
+boxplot(time_spend_company, col = "blue", main = "Boxplot of time_spend_company")
+hist(project_per_year, col = "orange", xlim= c(0,3))
+boxplot(project_per_year, col = "orange", main = "Boxplot of project_per_year")
+
+```
+
+As we can see, there are only two variables that are'n normal: time_spend_company and project_per_year. 
+Besides, we have 4 factors in our dataset with we can realise different graphs with two or more factors, as corrplots or barplots. 
+We make a corrplot and a scatterplot in order to see the relation between our variables. To do this, we need change our categorical variables into numeric variables. 
+
+
+```{r}
+require(car)
+HR_dataset$salarynum<-recode(HR_dataset$salary, "'low'=1")
+HR_dataset$salarynum<-recode(HR_dataset$salarynum, "'medium'=2")
+HR_dataset$salarynum<-recode(HR_dataset$salarynum, "'high'=3")
+HR_dataset$salarynum<-as.numeric(HR_dataset$salarynum)
+
+library(dplyr)
+library(graphics)
+library(corrplot)
+HR_dataset_corrplot <- select(HR_dataset, -sales, -salary)
+HR_correlation <- cor(HR_dataset_corrplot)
+library(corrplot)
+par(mfrow=c(1,2))
+corrplot(HR_correlation, method = "color", tl.cex = 0.6)
+corrplot(HR_correlation, method = "number", tl.cex = 0.6)
+par(mfrow=c(1,1))
+pairs(HR_correlation)
+```
+
+## WHO LEAVES THE COMPANY
+
+We can ask ourselves, ''who are leaving the company?''. To answer this question, we can take only the leavers of the company and do barplots. 
+```{r, message=FALSE}
+library(ggplot2)
+HR_leavers <- subset(HR_dataset, HR_dataset$left == 1)
+attach(HR_leavers)
+```
+
+
+```{r}
+par(mfrow=c(1,1))
+hist(satisfaction_level, col = "blue", xlim = c(0,1))
+hist(last_evaluation, col = "blue")
+hist(number_project, col= "blue")
+hist(average_montly_hours, col= "blue")
+hist(time_spend_company, col= "blue")
+hist(Work_accident, col = "blue")
+
+HR_dataset$salary<-factor(HR_dataset$salary,levels=c("low","medium","high")) 
+ggplot(HR_dataset,aes(x=salary, fill=factor(left)))+
+  geom_bar(stat='count',position='dodge')
+```
+
+## PRINCIPAL COMPONENT ANALYSIS
+
+We make a principal component analysis to see the relation between individuals and variables in only two or three dimensions. 
+```{r}
+HR_dataset_pca <- princomp(HR_correlation)
+summary(HR_dataset_pca)
+plot(HR_dataset_pca)
+```
+
+As we can see, we can explain the 68% of the variance with 3 principal components. Nevertheless we can take only 2 PCs in order to see easier than 3 PCs. 
+
+```{r}
+HR_dataset_pca$loadings
+```
+
+We can see there the relevance of the variables to build the PCs. We can see that the second PC is built by satisfaction_level, number_project, etc., and the first PC is built by time_spend_company or project_per_year, for example. 
+Besides, we make a pca biplot in order to see how the individuals are related between them and which variables are characterizing them. 
+
+```{r, message = FALSE}
+library(ggbiplot)
+```
+
+```{r}
+ggbiplot(HR_dataset_pca)
+```
+
