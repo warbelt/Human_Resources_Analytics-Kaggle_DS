@@ -1,0 +1,52 @@
+---
+title: "Biplot + cluster analysis"
+author: "Daniel El Sabbagh Velasco"
+date: "20 de enero de 2018"
+output: html_document
+---
+
+# MANOVA-BIPLOT
+The Biplot method (Gabriel, 1971; Galindo, 1986; Gower and Hand, 1996) is becoming one of the most popular techniques for analysing multivariate data. Biplot methods are techniques for simultaneous representation of the n rows and n columns of a data matrix \bf{X}, in reduced dimensions, where the rows represent individuals, objects or samples and the columns the variables measured on them.
+Several authors propose a Biplot representation for CVA called Canonical Biplot (CB) (Vicente-Villardon, 1992 and Gower & Hand, 1996) when it is oriented to the discrimination between groups or MANOVA-Biplot Gabriel (1972, 1995) when the aim is to study the variables responsible for the discrimination. 
+The main advantage of the Biplot version of the technique is that it is possible not only to establish the differences between groups but also to characterise the variables responsible for them.
+We are making a canonical-biplot or manova-biplot with confidence regions for the means of the groups. We can choose the variable that group our dataset. 
+First, we convert both variables salary and sales into factors:
+
+```{r, message=FALSE, warning=FALSE}
+library(readr)
+HR_comma_sep <- read_csv("C:/Users/danie/Desktop/HUMAN RESOURCES ANALYTICS - EQUIPO ANALISIS DE DATOS/HR_comma_sep.csv")
+View(HR_comma_sep)
+library(MultBiplotR)
+attach(HR_comma_sep)
+typeof(salary)
+HR_comma_sep$salary <- as.factor(HR_comma_sep$salary)
+typeof(HR_comma_sep$salary)
+typeof(sales)
+HR_comma_sep$sales <- as.factor(HR_comma_sep$sales)
+typeof(HR_comma_sep$sales)
+
+```
+
+Second, we only need numeric variables. So with dplyr we remove binary variables: 
+
+```{r, warning=FALSE}
+library(dplyr)
+Manovabiplot_dataset <- select(HR_comma_sep, -Work_accident, -left, -promotion_last_5years, -sales)
+Manova_biplot <- CanonicalBiplot(Manovabiplot_dataset[,1:5], Manovabiplot_dataset$salary, MANOVA = TRUE)
+summary(Manova_biplot)
+plot(Manova_biplot, LabelInd = FALSE)
+```
+
+We cannot see a clear difference between groups in this plot. 
+We will make the same plot but with sales in groups instead salary. 
+
+```{r}
+library(dplyr)
+Manovabiplot_dataset <- select(HR_comma_sep, -Work_accident, -left, -promotion_last_5years, -salary)
+Manova_biplot <- CanonicalBiplot(Manovabiplot_dataset[,1:5], Manovabiplot_dataset$sales, MANOVA = TRUE)
+summary(Manova_biplot)
+plot(Manova_biplot, LabelInd = FALSE)
+HJ_biplot <- HJ.Biplot(Manovabiplot_dataset[,1:5], dimension = 3)
+plot(HJ_biplot)
+```
+We don't get an interessant result neither Manova-Biplot and HJ Biplot, except the relation between variables. We can see how satisfaction_level and time_spend_company are inverse correlated which means that a person the more time spent in the company less satisfied are. 
