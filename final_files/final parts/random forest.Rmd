@@ -1,0 +1,95 @@
+---
+title: "Random Forest"
+author: "Roberto Díaz"
+date: "27 de enero de 2018"
+output: pdf_document
+---
+Random forests are learning methods of regression, clasification or other tasks. It is a combination of decision trees, and it gives the Measures of Central Tendency of the outputs of these trees. The results could be the mode (clasification), or the mean (regression) of the outputs.
+
+It is a very popular method of prediction because it is very simple to train and adjust. It is one of the most accurate algorithms, it is very accurate with big databases, and it can manage hundreds of variables. also, it gives an estimation of the most important variables. Unfortunately, the classification of the random forest is hard to interpretate. Lastly, other disadvantage is that the model is very sensible to overfitting.
+
+
+ 1 - LOAD THE DATA
+ 2 - LOGISTIC REGRESSION
+ 3 - ASSESSING THE PREDICTIVE ABILITY OF THE RANDOM FOREST MODEL
+
+# 1 - LOAD THE DATA
+```{r include=FALSE}
+library(readr)
+data <- HR_comma_sep_v2 <- read_csv("~/Human_Resources_Analytics-Kaggle_DS/final_files/databases/HR_comma_sep_v2.csv") # Remeber to set the working directory for this line of code to work
+```
+
+We are going to create the test and train datasets, splitting our data, to do a prediction using our Random Forest. 
+```{r}
+n <- nrow(data)
+idx <- sample(n, n * .66) # so that the split is 2/3 of the data
+
+train <- data[idx, ]
+test <- data[-idx, ]
+
+dim(test)
+dim(train)
+```
+These are the dimensions of our new data.
+
+# 2- RANDOM FOREST
+
+First we have to set the seed of R‘s random number generator, useful to reproduce simulations or random objects.
+```{r}
+set.seed(2017)
+```
+
+The below code will install the rpart package if it doesn't exist, and then load it.
+```{r warning=FALSE, message=FALSE}
+if (!require(rpart)) install.packages("rpart")
+library(rpart)
+
+attach(train)
+```
+
+Now we load the randomForest library.
+The below code will install the randomForest package if it doesn't exist, and then load it
+```{r warning=FALSE, message=FALSE}
+if (!require(randomForest)) install.packages("randomForest")
+library(randomForest)
+```
+
+Now we run the Random Forest model. We have to transform character variables to factors to run.
+```{r}
+train$department<-as.factor(train$department)
+train$salary<-as.factor(train$salary)
+
+fit <- randomForest(as.factor(train$left)~.,
+                    data=train,
+                    importance=TRUE,
+                    ntree=2000)
+```
+
+With this we can visualise what variables are important:
+```{r}
+varImpPlot(fit)
+```
+There's two types of importance measures shown above.
+1 - The accuracy one tests to see how worse the model performs without each variable, so a high decrease in
+accuracy would be expected for very predictive variables.
+2 - The Gini one digs into the mathematics behind decision trees, but essentially measures how pure the
+nodes are at the end of the tree. Again it tests to see the result if each variable is taken out and a high score means the variable was important.
+
+# 3 - ASSESSING THE PREDICTIVE ABILITY OF THE RANDOM FOREST MODEL
+
+Generate the prediction of the random forest on the test dataset using the last model generated using the train_cleaned database.
+
+Prediction on the test dataset
+```{r}
+test$department<-as.factor(test$department)
+test$salary<-as.factor(test$salary)
+
+Prediction <- predict(fit, test)
+```
+
+Assess the accuracy of the random forest model using the test dataset.
+```{r}
+misClasificError <- mean(Prediction !=test$left)
+print(paste('Accuracy',1-misClasificError))
+```
+As we can see, the accuracy is very high. Say something about the overfitting.
