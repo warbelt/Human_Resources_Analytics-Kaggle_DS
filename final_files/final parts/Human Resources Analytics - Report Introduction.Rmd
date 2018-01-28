@@ -1,0 +1,134 @@
+---
+title: '**Human Resources Analytics - Exploratory Analysis**'
+author: "Data Analysis Team"
+date: "27 November 2017"
+output:
+  html_document: default
+  pdf_document:
+    highlight: zenburn
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Content
+
+**1 -** INTRODUCTION
+
+##  1.1 - About this project
+##  1.2 - Project context
+##  1.3 - Data provided by the client
+##  1.4 - Hypothesis
+
+**2 -** DATA MODELLING
+
+##  2.1 - Data modelling intro
+
+**X -** REFERENCES
+
+1 - INTRODUCTION
+
+1.1 - About this project
+
+This kernel has been developed with the intent to put into practice our data science knowledge while learning in the process. 
+
+The dataset used for the analysis can be found at Kaggle using the following link: -add link-
+
+The software used to carry out the analysis was R and Tableau and Power BI perform the data visualisation.
+
+We hope this document can be useful to you as a reference on how to approach employee turnover analysis and visualisation as we cover the whole data analysis workflow process: from data exploration to building a dashboard that can be used by end users as self-service.
+
+Your feedback on how to improve the analysis or visualisations is more than welcome, so please feel free to leave it in the comments section.
+
+Hope you enjoy it!
+
+- Data Analysis Team - 
+
+1.2 - Project context
+
+Our client had always approached employee turnover data from a reporting point of view, focusing on what had happened in the past (i.e. what was the turnover rate in a business area last month) and comparing rates across business areas or locations. Although this was useful to some extent, it offered the organisation limited value in aiding decision making.
+
+A new CHRO (Chief Human Resources Officer) has recently joined our client and is championing a better use of people data in the Human Resources department and across the organisation. Based on his previous experience, the new CHRO knows that looking at generating insights related to employee turnover can be an impactful quick win that will help him to establish himself in his new role and be a strong push for his People Analytics agenda. 
+
+This is the reason our client, with the aforementioned CHRO as the client sponsor, has contacted us to carry out a piece of work with the following aims:
+
+1.	Identify where are the employee turnover hotspots
+2.	Understand what are the drivers of employee turnover
+3.	Build a data model that can forecast employee turnover
+4.	Build a "risk of leaving" score for each individual employee
+
+1.3 - Data provided by the client
+
+In order to carry out this project, our client shared with us a dataset of leavers information for 2017, which was comprised of the following variables:
+
+.	Satisfaction Level
+.	Last evaluation
+.	Number of projects
+.	Average monthly hours
+.	Time spent at the company
+.	Whether they have had a work accident
+.	Whether they have had a promotion in the last 5 years
+.	Departments (column sales)
+.	Salary
+.	Whether the employee has left
+
+"Whether the employee has left" is clearly the key variable of this dataset as it tells us whether the employee has left the organisation or not and will be using as the central point of our analysis and data modelling.
+
+The rest of the variables will allow us to identify the employee turnover hotspots, feed the data models and to build our dashboards.
+
+1.4 - Hypothesis
+
+Is good practice to first think about your data challenge in its context and to build some hypothesis before jumping into the actual data analysis.
+
+On this occasion, between us and the CHRO we came up with the following hypothesis that were tested in our analysis:
+
+.	Hypothesis 1: "Satisfaction level" is negatively correlated with "Whether the employee has left"
+.	Hypothesis 2: the lower the "time spent at the company" the higher the risk of leaving
+.	Hypothesis 3: the higher the "average monthly hours", the higher the risk of leaving
+
+These hypothesis were selected based on a literature review of academic papers published about employee turnover and on the information collected from semi-structured interviews carried out with stakeholders from our client.
+
+1.5 - Data Analysis Report Structure
+
+The following sections will describe the data analysis process that we carried out to tackle this challenge and to come up with an evidence based response to our client's questions and aims for this project.
+
+The structure for the rest of the report is as follows:
+
+1 - Data Cleaning
+2- Data Explorations
+3 - Data Modelling
+4 - Data Visualisation
+5 - Recommendations
+6 - Conclusion
+
+2 - DATA MODELLING
+
+2.1 - Data modelling intro
+
+As a recap, two of our aims for this project were the following:
+
+1.	Build a data model that can forecast employee turnover
+2.	Build a "risk of leaving" score for each individual employee
+
+Although the client has only asked us to build "a data model", we want to showcase our analytical expertise and test different models that will approach the analysis differently and pick the top performer among them. This will give reassurance to our client that the model we have developed for them is robust and competitive.
+
+In order to pick the best performer amongst our models, we need to decide on what basis we are going to decide which model was the most appropriate. For this project we will use the accuracy of prediction as the criteria to determine the top performer.
+
+The data modelling techniques that we will employ are the following:
+
+1.	Logistic Regression - technique used to predict a binary variable (in our case whether our employee has left) built using predictors that can be continuous, categorical or a mix of both.
+
+2.	Discriminant Analysis - multivariate method to predict which group a new individual belongs. Can be used for the same objective than the logistic regression.
+
+3.	Biplot - graphic representation of rows and columns at the same time. Rows, usually individuals, are represented as dots and columns, usually variables, are represented as vectors.
+
+4.	Decision Tree - Decision trees are what's known as a glass-box model, after the model has found the patterns in the data you can see exactly what decisions will be made for unseen data that you want to predict. The algorithm starts with of all the data at the root node (drawn at the top) and scans all the variables for the best one to split on (1).
+
+5.	Random Forest - A collection of totally unique trees are generated, which all make their classi???cations di???erently, to then be ensemble in order to choose the best predictor (1).
+
+
+REFERENCES
+
+(1)	- trevorstephens.com/kaggletitanic-tutorial/r-part-3-decision-trees
+
