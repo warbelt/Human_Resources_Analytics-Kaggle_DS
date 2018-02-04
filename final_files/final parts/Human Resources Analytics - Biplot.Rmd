@@ -1,14 +1,8 @@
----
-title: "Biplot"
-author: "Roberto D?az"
-date: "16 de diciembre de 2017"
-output: pdf_document
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# 1. Loading packages and database
 
 ```{r include=FALSE}
 library(readr)
@@ -18,7 +12,6 @@ HR_comma_sep_v2 <- read_csv("~/Human_Resources_Analytics-Kaggle_DS/final_files/d
 ```{r include=FALSE}
 install.packages("http://biplot.usal.es/classicalbiplot/multbiplot-in-r/multbiplotrtar.gz", repos = NULL, type="source")
 ```
-
 To do a biplot analysis, first, we need the package "MultBiplotR".
 ```{r warning=FALSE, message=FALSE}
 require(MultBiplotR)
@@ -31,7 +24,7 @@ require(dplyr)
 cuanti<-select(HR_comma_sep_v2, -c(department, salary))
 ```
 
-##RECODE SATISFACTION LEVEL
+## 1.1 Feature engineering
 
 We are going to recode the variable satisfaction level to a qualitative variable see the different levels if different colours in our plot. We are going to do the same in our plot with the salary.
 
@@ -44,14 +37,16 @@ cuanti$satisnom<-recode(cuanti$satisnom, "0.76:1='VH'")
 cuanti$satisnom<-as.factor(cuanti$satisnom)
 ```
 
-#BIPLOT
-
 It is advisable to first standarize the data set before performing a biplot on it
 
 ```{r}
 biplot<-PCA.Biplot(scale(cuanti[1:9]))
 plot(biplot)
 ```
+
+
+# 2. PCA-BIPLOT
+
 
 In this plot we can barely do some interpretation (besides the relationship between variables), so we are going to delete the Labels and put some colour.
 
@@ -67,9 +62,6 @@ We can see that the clusters are all in the same place, although a little displa
 plot(biplot, LabelInd = FALSE, CexInd=0.5, ColorInd=cuanti$satisnom)
 legend(x="topright", c("VL", "L", "H", "VH"), pch=1, col=c("Purple", "Green", "Red", "Skyblue"))
 ```
-
-
-##Salary
 
 Now we are going to do the same with salary, to separate the different levels of salary with colours.
 
@@ -90,7 +82,7 @@ legend(x="topright", c("LOW", "MEDIUM", "HIGH"), pch=1, col=c("Green", "Blue", "
 ```
 
 
-#HJ BIPLOT
+# 3. HJ-BIPLOT
 
 An HJ-Biplot has a good representation on both variables and individuals, but it is supposed that it doesn?t represent well the original data.
 ```{r}
@@ -111,8 +103,6 @@ plot(hjbiplot, LabelInd = FALSE, CexInd=0.5, xlim=c(-4,4), ylim=c(-4,4), ColorIn
 legend(x="topright", c("VL", "L", "H", "VH"), pch=1, col=c("Purple", "Green", "Red", "Skyblue"))
 ```
 In these plots we cannot interpretate more information than the PCA-Biplot.
-
-##Salary
 
 ```{r}
 hjbiplot=AddCluster2Biplot(hjbiplot, ClusterType="us", Groups=HR_comma_sep_v2$salary)
