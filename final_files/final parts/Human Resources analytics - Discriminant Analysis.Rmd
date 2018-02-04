@@ -67,7 +67,7 @@ All this roughly means that a high recall is desirable over aspects like specifi
 A random classifier would assign the positive class to 50% of all cases, so it's recall rate would be exactly 50%. 
 Thus, applying this discriminant analysis model will be objectively worse than applying a random classifier.
 
-##Plot the LDA
+## Plot the LDA
 ```{r warning=FALSE, message=FALSE}
 require(ggplot2)
 require(scales)
@@ -85,7 +85,7 @@ p1
 
 Here, we can see that there are more mistakes in our model, because one can see more mixed colours.
 
-#CROSS VALIDATION
+# CROSS VALIDATION
 
 Now we are going to do a cross validation of our model, and see the accuracy and the table of it.
 ```{r}
