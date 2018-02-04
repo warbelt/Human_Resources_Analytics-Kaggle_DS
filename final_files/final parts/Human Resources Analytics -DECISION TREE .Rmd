@@ -1,0 +1,127 @@
+---
+title: "Decision Tree"
+author: "Daniel El Sabbagh Velasco"
+date: "4 de febrero de 2018"
+output: html_document
+---
+# 1.- LOADING THE DATASET AND THE REQUIRED PACKAGES
+
+In a first step we will load the dataset from our directory and we will load the required packages, like formattable. We need this package in order to do the decision tree analysis. 
+
+```{r, message=FALSE}
+library(readr)
+HR_comma_sep <- read_csv("C:/Users/danie/Desktop/HUMAN RESOURCES ANALYTICS - EQUIPO ANALISIS DE DATOS/HR_comma_sep.csv")
+View(HR_comma_sep)
+```
+
+We look for if there are null values in our database, and if there are any, we clean them.
+
+```{r}
+which(is.na(HR_comma_sep))
+```
+As we can see, there aren't null values in our dataset so we can proceed to create a new variable, named project per year that comes of the quotient between the number of projects and the time in the company
+
+```{r, message=FALSE}
+
+library(dplyr)
+data <- mutate(HR_comma_sep, project_per_year = number_project/time_spend_company)
+View(data)
+```
+
+```{r, message=FALSE}
+summary(data)
+if (!require(formattable)) install.packages("formattable")
+library(formattable)
+```
+
+```{r}
+data %>% 
+  count(salary) %>% 
+  formattable(align = 'l')
+```
+
+## 1.1.- Data preparation
+We split our dataset into 2/3 to have a part of the database as train and another as a test.
+
+```{r}
+n <- nrow(data)
+idx <- sample(n, n * .66)
+```
+
+We make some small changes, such as converting the left variable into a factor and sorting by class the salary variable. 
+```{r}
+data %>% 
+  mutate(
+    left = factor(left, labels = c("Remain", "Left")),
+    salary = ordered(salary, c("low", "medium", "high"))
+  ) -> d
+
+```
+
+And we divide the dataset into train and test. 
+
+```{r}
+train <- d[idx, ]
+test <- d[-idx, ]
+```
+
+# 2.- RUN THE DECISION TREE MODEL
+
+A decision tree is a decision support tool that uses a tree-like graph or model of decisions and their possible consequences, including chance event outcomes, resource costs, and utility. It is one way to display an algorithm that only contains conditional control statements.
+
+In decision analysis, a decision tree and the closely related influence diagram are used as a visual and analytical decision support tool, where the expected values (or expected utility) of competing alternatives are calculated.
+
+A decision tree consists of three types of nodes:
+
+Decision nodes - typically represented by squares
+Chance nodes - typically represented by circles
+End nodes - typically represented by triangles
+
+```{r, message=FALSE}
+require(rpart)
+require(rpart.plot)
+tree <- rpart(left ~ ., data = train)
+res <- predict(tree, test)
+```
+
+```{r}
+if (!require(Metrics)) install.packages("Metrics")
+library(Metrics)
+auc(as.numeric(test$left) - 1, res[, 2])
+```
+
+
+As we can see in the code above we obtain a high precision of our model, so we can go on to graph it:
+
+```{r}
+rpart.plot(tree, type = 2, fallen.leaves = F, cex = 1, extra = 2)
+```
+
+## Interpreting the decision tree
+
+1 - The most important variable is satisfaction level. If its higher than 0.46 you are much more likely to stay.
+
+2 - If you have high satisfaction, having worked less than 4.5 years make you more likely to remain.
+
+3 - If you have low satisfaction, the number of projects becomes important - more than 2.5 projects make you more likely to stay.
+
+# 3.- MAKING PREDICTIONS AND ASSESSING ACCURACY OF THE DECISION TREE MODEL
+
+We can evaluate the accuracy of our model with the dataset test:
+
+```{r}
+Prediction <- predict(tree, test,type ="class")
+```
+
+```{r}
+misClasificError <- mean(Prediction !=test$left)
+print(paste('Accuracy',1-misClasificError))
+```
+
+```{r}
+submit <- data.frame(SatisfactionLevel=test$satisfaction_level,Leaver=Prediction)
+write.csv(submit,file="Human Resources Analytics - Decision Tree Predictions.csv",row.names=FALSE)
+```
+
+
+As we can see, the accuracy of our model even in the dataset test is very high, higher than 95%, which means that the decision tree correctly classifies 96.6% of the individuals who leave or remain in the company.
