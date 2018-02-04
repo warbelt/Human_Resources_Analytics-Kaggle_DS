@@ -1,13 +1,8 @@
----
-title: "Human Resources Analytics - Discriminant"
-author: "Mario Durantez"
-date: "4 de febrero de 2018"
-output: html_document
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+# 1. Load database and packages
 
 ```{r include=FALSE}
 library(readr)
@@ -16,9 +11,10 @@ HR_comma_sep_v2 <- read_csv("../../final_files/databases/HR_comma_sep_v2.csv")
 
 ```{r}
 library(caret)
+require(MASS)
 ```
 
-# We define an 80%/20% train/test split of the dataset
+**We define an 80%/20% train/test split of the dataset**
 ```{r}
 split<-0.80
 trainIndex <- createDataPartition(HR_comma_sep_v2$left, p=split, list=FALSE)
@@ -27,12 +23,7 @@ test <- HR_comma_sep_v2[-trainIndex,]
 ```
 
 
-#DISCRIMINANT ANALYSIS
-
-```{r}
-require(MASS)
-```
-
+# 2. DISCRIMINANT ANALYSIS
 First we train a discriminant analysis model using our training data set.
 
 ```{r}
@@ -41,9 +32,7 @@ lda
 ```
 We can see the mean of each variable and the general probability to belong to the leavers and the non-leavers.
 
-
-
-# PREDICTION
+## 2.2 PREDICTION
 
 Now we apply this model to our test data. 
 
@@ -55,19 +44,20 @@ accuracy<-sum(diag(prop.table(table)))
 accuracy
 table
 ```
-## Results
+# 3. Results
 We can see that the accuracy is an 81% (worse than the logistic regression) and below we can see the table of the prediction and real data.
 
 Looking at the confusion matrix, we can extract that positive cases are being misclassified with a very high probability. Out of 687 positives in the training dataset, 369 were false negatives, with just a poor 47% recall (true positive rate or sensitivity).
 
-### What does this mean?
+## 3.1 What does this mean?
 
-On the topic of fiding which employees are more likely to leave, we need to notice what the costs of a missclassification are. In the case of a false positive, we are taking measures to keep an employee that was already going to stay, Although we devoted resources to a non-leaver, this will (presumably) still positively impact his happiness and performance, so it would not be a complete failure. In the case of a false negative, however, the cost will be one of our employees. No brigh side.
+On the topic of fiding which employees are more likely to leave, we need to notice what the costs of a missclassification are.
+In the case of a false positive, we are taking measures to keep an employee that was already going to stay. Although we devoted resources to a non-leaver, this will (presumably) still positively impact his happiness and performance, so it would not be a complete failure. In the case of a false negative, however, the cost will be one of our employees. No brigh side.
 All this roughly means that a high recall is desirable over aspects like specificity (more important when costs of a false positive overpass the others).
 A random classifier would assign the positive class to 50% of all cases, so it's recall rate would be exactly 50%. 
 Thus, applying this discriminant analysis model will be objectively worse than applying a random classifier.
 
-## Plot the LDA
+## 3.2 Plot the LDA
 ```{r warning=FALSE, message=FALSE}
 require(ggplot2)
 require(scales)
@@ -85,7 +75,7 @@ p1
 
 Here, we can see that there are more mistakes in our model, because one can see more mixed colours.
 
-# CROSS VALIDATION
+## 3.3 CROSS VALIDATION
 
 Now we are going to do a cross validation of our model, and see the accuracy and the table of it.
 ```{r}
