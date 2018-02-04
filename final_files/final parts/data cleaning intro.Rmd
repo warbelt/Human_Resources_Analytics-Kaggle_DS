@@ -7,6 +7,6 @@ output: pdf_document
 
 The process of data cleaning is the finding and correction of incorrect data in a table of data or database. This "dirty data" could be eliminated, modified or substituted for other data. There are several processes. For example, one process is the elimination or substitution of the missing data, or the elimination of non relevant variables. In a nutshell, is the process of preparation of our data to do the pertinent analysis.
 
-Other process that is not strictly data cleansing, but it is used to prepare our database, is the creation of new variables, that could help us in the subsequent analysis. 
+Another proccess that is not strictly data cleaning, but it is used to prepare our database, is the creation of new variables, that could help us in the subsequent analysis. 
 
-We can see that our database requires very little cleansing, because there are no missing values. We only are going to create new variables that we think will be useful in the future. 
+We can see that our database requires very little cleaning, because there are no missing values. We only are going to create new variables that we think will be useful in the future. 
