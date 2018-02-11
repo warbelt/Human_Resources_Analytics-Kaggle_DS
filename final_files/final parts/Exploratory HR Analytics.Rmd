@@ -1,0 +1,245 @@
+---
+title: "Exploratory HR Analytics"
+author: "Daniel El Sabbagh Velasco"
+date: "20 de noviembre de 2017"
+output: html_document
+---
+# 1.- LOADING DATASET
+
+```{r, message=FALSE, warning=FALSE}
+library(readr)
+HR_comma_sep <- read_csv("C:/Users/danie/Desktop/HUMAN RESOURCES ANALYTICS - EQUIPO ANALISIS DE DATOS/HR_comma_sep.csv")
+View(HR_comma_sep)
+```
+```{r}
+head(HR_comma_sep)
+```
+
+
+# 2.- MISSING DATA
+We check the amount of missing data from our dataset
+
+```{r}
+which(is.na(HR_comma_sep))
+```
+
+We can see that we don't have missing data in our dataset. 
+
+# 3.- CREATING NEW VARIABLES
+
+It is interesting create a new variable that relates number_project and time_spend_company
+```{r, message=FALSE}
+library(dplyr)
+HR_dataset <- mutate(HR_comma_sep, project_per_year = number_project/time_spend_company)
+View(HR_dataset)
+```
+
+Now we can see the head of our dataset with the new variable: project_per_year
+```{r}
+head(HR_dataset)
+```
+
+# 4.- EXPLORING THE DATA
+
+We have around 15.000 employees in our company, and we know about them: satisfaction_level, last_evaluation, number_project, average_monthly_hours, time_spend_company, work_accident, left, promotion_last_5years, sales and salary. 
+We make a exploratory table: 
+
+```{r}
+summary(HR_dataset)
+```
+
+We can see that the mean of satisfaction_level is around 0.61, or the performance average is around 0.71. Also the average_monthly_hours is around 200, time_spend_company is around 3.498 years on average and project_per_year is around 1.21 on average. Besides around 14,4% of our workers have a work and 23,81% of our workers left the work and only the 0.021% of the workers had a promotion on the last five years. 
+
+## 5.- NORMALITY OF VARIABLES
+We check the normality of variables with two graphs: histograms and box-plot. 
+
+```{r}
+attach(HR_dataset)
+par(mfrow=c(1,2))
+hist(satisfaction_level, col = "red", xlim = c(0,1))
+boxplot(satisfaction_level, col = "red", ylim= c(0,1), main = "Boxplot of Satisfaction_level")
+hist(last_evaluation, col = "purple", xlim = c(0,1))
+boxplot(last_evaluation, col = "purple", ylim= c(0,1), main = "Boxplot of Last_evaluation")
+hist(number_project, col="green", breaks = 7)
+boxplot(number_project, col="green", main = "Boxplot of number_project")
+hist(average_montly_hours, col = "pink", xlim= c(50, 350))
+boxplot(average_montly_hours, col = "pink", main = "Boxplot of Average_monthly_hours")
+hist(time_spend_company, col = "blue", breaks = 8)
+boxplot(time_spend_company, col = "blue", main = "Boxplot of time_spend_company")
+hist(project_per_year, col = "orange", xlim= c(0,3))
+boxplot(project_per_year, col = "orange", main = "Boxplot of project_per_year")
+
+```
+
+As we can see, there are only two variables that are not normal: time_spend_company and project_per_year. 
+Besides, we have 4 factors in our dataset with we can realise different graphs with two or more factors, as corrplots or barplots. 
+We make a corrplot and a scatterplot in order to see the relation between our variables. To do this, we need change our categorical variables into numeric variables. 
+
+
+```{r, message=FALSE}
+require(car)
+HR_dataset$salarynum<-recode(HR_dataset$salary, "'low'=1")
+HR_dataset$salarynum<-recode(HR_dataset$salarynum, "'medium'=2")
+HR_dataset$salarynum<-recode(HR_dataset$salarynum, "'high'=3")
+HR_dataset$salarynum<-as.numeric(HR_dataset$salarynum)
+
+library(dplyr)
+library(graphics)
+library(corrplot)
+
+
+```
+
+```{r}
+HR_dataset_corrplot <- select(HR_dataset, -sales, -salary)
+HR_correlation <- cor(HR_dataset_corrplot)
+library(corrplot)
+par(mfrow=c(1,2))
+corrplot(HR_correlation, method = "color", tl.cex = 0.6)
+corrplot(HR_correlation, method = "number", tl.cex = 0.6)
+par(mfrow=c(1,1))
+pairs(HR_correlation)
+```
+
+## 5.1.- WHO LEAVES THE COMPANY?
+
+We can ask ourselves, ''who are leaving the company?''. To answer this question, we can take only the leavers of the company and do barplots. 
+```{r, message=FALSE}
+library(ggplot2)
+HR_leavers <- subset(HR_dataset, HR_dataset$left == 1)
+attach(HR_leavers)
+```
+
+
+```{r}
+par(mfrow=c(1,1))
+hist(satisfaction_level, col = "blue", xlim = c(0,1))
+
+```
+
+Normally, people who leave the company usually have a medium or low level of satisfaction, but there are too many people with a high level of satisfaction that leaves the company. 
+
+```{r}
+hist(last_evaluation, col = "blue")
+```
+
+There are too many people with a high level of satisfaction in the last evaluation that left the company. 
+```{r}
+hist(number_project, col= "blue")
+
+```
+
+As we can see, workers that left the company has a low  level of number project, but there are a high number of workers that are leaving the comany whit a lot of projects. The same conclusion we can draw for the variables average monthly hours and time spend company
+
+```{r}
+hist(average_montly_hours, col= "blue")
+
+```
+
+```{r}
+hist(time_spend_company, col= "blue")
+
+```
+```{r}
+hist(Work_accident, col = "blue")
+```
+
+This is a curious case, since there are many workers who leave the company without having suffered an accident at work. On the other side, there are few workers who have suffered a work accident and leave the company.
+
+```{r}
+HR_dataset$salary<-factor(HR_dataset$salary,levels=c("low","medium","high")) 
+ggplot(HR_dataset,aes(x=salary, fill=factor(left)))+
+  geom_bar(stat='count',position='dodge')
+```
+
+
+In this graph we can see how the workers who leave the company are mostly low-wage workers, finding here a key to which workers leave the company and why.
+
+## 5.2.- ANALYSIS OF VARIANCE (ANOVA)
+
+Analysis of variance is a statistical model that finds the difference among group means through deviance analysis. 
+In a first step we will find categorical variables in our dataset and then we will apply anova on those. 
+```{r, message=FALSE}
+if (!require(RcmdrMisc)) install.packages("RcmdrMisc")
+library(RcmdrMisc)
+
+```
+```{r}
+sapply(HR_dataset, class)
+```
+
+We can see if we can find differente between salary levels: 
+```{r}
+AnovaModel.salary <- (lm(HR_dataset$left ~ salary, data=HR_dataset))
+Anova(AnovaModel.salary)
+
+with(HR_dataset, (tapply(HR_dataset$left, list(salary),
+                           mean, na.rm=TRUE)))
+
+```
+
+This test show us that the turnover rate is significantly different between salary levels. 
+This means that a worker who receives a low salary does not have the same degree of satisfaction as a worker who has a high salary. 
+We can do the same for sales and for the interaction between sales and salary as we can see in the following code: 
+
+```{r}
+AnovaModel.department <- (lm(HR_dataset$left ~ sales, data=HR_dataset))
+Anova(AnovaModel.department)
+
+with(HR_dataset, (tapply(HR_dataset$left, list(sales),
+                   mean, na.rm=TRUE)))
+AnovaModel.salary_and_department <- (lm(HR_dataset$left ~ salary*sales, data=HR_dataset))
+Anova(AnovaModel.salary_and_department)
+
+with(HR_dataset, (tapply(HR_dataset$left, list(salary,sales),
+                   mean, na.rm=TRUE)))
+```
+
+As we can see, there are difference between the different sales and the interaction between salary and sales is statistically significant. 
+
+## 5.3.- MANOVA-BIPLOT
+
+The next step is to characterize these statistically significant differences through a biplot method known as Manova-Biplot. The Biplot method (Gabriel, 1971; Galindo, 1986; Gower and Hand, 1996) is becoming one of the most popular techniques for analysing multivariate data. Biplot methods are techniques for simultaneous representation of the n rows and n columns of a data matrix \bf{X}, in reduced dimensions, where the rows represent individuals, objects or samples and the columns the variables measured on them.
+Several authors propose a Biplot representation for CVA called Canonical Biplot (CB) (Vicente-Villardon, 1992 and Gower & Hand, 1996) when it is oriented to the discrimination between groups or MANOVA-Biplot Gabriel (1972, 1995) when the aim is to study the variables responsible for the discrimination. 
+The main advantage of the Biplot version of the technique is that it is possible not only to establish the differences between groups but also to characterise the variables responsible for them.
+We are making a canonical-biplot or manova-biplot with confidence regions for the means of the groups. We can choose the variable that group our dataset. 
+First, we convert both variables salary and sales into factors:
+
+```{r, message=FALSE, warning=FALSE}
+library(readr)
+HR_comma_sep <- read_csv("C:/Users/danie/Desktop/HUMAN RESOURCES ANALYTICS - EQUIPO ANALISIS DE DATOS/HR_comma_sep.csv")
+View(HR_comma_sep)
+library(MultBiplotR)
+attach(HR_comma_sep)
+typeof(salary)
+HR_comma_sep$salary <- as.factor(HR_comma_sep$salary)
+typeof(HR_comma_sep$salary)
+typeof(sales)
+HR_comma_sep$sales <- as.factor(HR_comma_sep$sales)
+typeof(HR_comma_sep$sales)
+
+```
+
+Second, we only need numeric variables. So with dplyr we remove binary variables: 
+
+```{r, warning=FALSE}
+library(dplyr)
+Manovabiplot_dataset <- select(HR_comma_sep, -Work_accident, -left, -promotion_last_5years, -sales)
+Manova_biplot <- CanonicalBiplot(Manovabiplot_dataset[,1:5], Manovabiplot_dataset$salary, MANOVA = TRUE)
+summary(Manova_biplot)
+plot(Manova_biplot, LabelInd = FALSE)
+```
+
+We cannot see a clear difference between groups in this plot. 
+We will make the same plot but with sales in groups instead salary. 
+
+```{r}
+library(dplyr)
+Manovabiplot_dataset <- select(HR_comma_sep, -Work_accident, -left, -promotion_last_5years, -salary)
+Manova_biplot <- CanonicalBiplot(Manovabiplot_dataset[,1:5], Manovabiplot_dataset$sales, MANOVA = TRUE)
+summary(Manova_biplot)
+plot(Manova_biplot, LabelInd = FALSE)
+HJ_biplot <- HJ.Biplot(Manovabiplot_dataset[,1:5], dimension = 3)
+plot(HJ_biplot)
+```
+We don't get an interessant result neither Manova-Biplot and HJ Biplot, except the relation between variables. We can see how satisfaction_level and time_spend_company are inverse correlated which means that a person the more time spent in the company less satisfied are. 
