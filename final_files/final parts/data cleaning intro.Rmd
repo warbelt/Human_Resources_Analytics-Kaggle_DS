@@ -10,3 +10,21 @@ The process of data cleaning is the finding and correction of incorrect data in 
 Other process that is not strictly data cleansing, but it is used to prepare our database, is the creation of new variables, that could help us in the subsequent analysis. 
 
 We can see that our database requires very little cleansing, because there are no missing values. We only are going to create new variables that we think will be useful in the future. 
+
+
+
+
+library(dplyr)
+library(readr)
+
+ds <- read_csv("~/Human_Resources_Analytics-Kaggle_DS/final_files/databases/HR_comma_sep.csv")
+
+# Create new column: average number of prejects per year
+
+ds <- mutate(ds, projects_per_year = number_project/time_spend_company)
+
+# Rename column sales to department
+
+ds <- rename(ds, department = sales)
+
+write_csv(ds, file.choose(new = TRUE))
