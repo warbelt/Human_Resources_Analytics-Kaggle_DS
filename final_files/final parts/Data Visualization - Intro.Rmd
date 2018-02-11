@@ -1,0 +1,12 @@
+---
+title: "Intro Data Visualization"
+author: "Roberto Díaz"
+date: "11 de febrero de 2018"
+output: pdf_document
+---
+
+#DATA VISUALIZATION
+
+Now, we are going to do some Data Visualization. Data Visualization consist in the creation of the visual representation of our data in an intuitive and easy way. The goal is to show the information efficiently with graphics and plots, to make complex data more accesible and understandable. For this particular task, we have used two computer programs: Tableau Desktop and Power BI.
+
+These programs are very similar. Both are based in plots, dashboards and stories. A plot is any visual representation of our data. It could be a barplot, a histogram, any type of plot. A dashboard is a data screen with different plots to visualize the most important data in a quick way. A story is a combination of dashboards, or a dashboard which has a narration of the visualizations. In this Project, we are going to create one story from each program with their respective dashboards and plots. 
