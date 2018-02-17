@@ -1,0 +1,25 @@
+#DATA MODEL COMPARISON
+
+To compare the different techiques of our project, we will analyze the accuracy of each method to see which model has the highest. Each model makes a prediction of each individual and assigns it to a group. Some predictions fail, some succeed. The accuracy is the percentage of correct predictions, and it should tells us how good is each model.
+
+In the four techniques we have selected, these are the accuracy of each one:
+
+-Logistic Regression 0.865288
+##We did again the Logistic Regression but with non-significant variables to see if the model improves. It did slightly. 0.865288
+
+-Discriminant Analysis 0.8152718
+
+-Decision Tree 0.967843137254902
+
+-Random Forest 0.990588235294118
+
+We have to be careful with the overfitting, though. The overfitting, as the same name says, happen when a model is overtrained to a specific dataset which we know the results. The consequence is that the model predicts almost perfectly the specific data we have, but performs poorly with other data. Because of that, the accuracy of that model is not real, and because of that, we have to avoid the overfitting as we can. 
+
+-Logistic Regression 0.8717694
+##We did again the Logistic Regression but with non-significant variables to see if the model improves. It did slightly. 0.874014
+
+-Discriminant Analysis 0.8179879
+
+-Decision Tree
+
+-Random Forest
