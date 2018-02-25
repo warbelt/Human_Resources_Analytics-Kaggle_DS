@@ -298,7 +298,7 @@ corrplot.mixed(corTRAIN, tl.cex = 0.5)
 #There is positive correlation between the performance and the number of projects and the monthly hours.
 
 
-#Scatter-Plots (the scatter-plots aren´t working well)
+#Scatter-Plots (the scatter-plots arenÂ´t working well)
 attach(HR_comma_sep_v2)
 
 plot(satisfaction_level,last_evaluation)
@@ -329,6 +329,3 @@ HR_comma_sep_v2$IT<-ifelse(HR_comma_sep_v2$department=="IT", 1, 0)
 HR_comma_sep_v2$product_mng<-ifelse(HR_comma_sep_v2$department=="product_mng", 1, 0)
 HR_comma_sep_v2$marketing<-ifelse(HR_comma_sep_v2$department=="marketing", 1, 0)
 HR_comma_sep_v2$RandD<-ifelse(HR_comma_sep_v2$department=="RandD", 1, 0)
-
-
-
