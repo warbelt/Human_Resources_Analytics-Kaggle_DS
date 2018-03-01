@@ -1,0 +1,1575 @@
+---
+title: "all"
+author: "Roberto Díaz"
+date: "1 de marzo de 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**1 -** INTRODUCTION
+
+##  1.1 - About this project
+##  1.2 - Project context
+##  1.3 - Data provided by the client
+##  1.4 - Hypothesis
+
+**2 -** DATA MODELLING
+
+##  2.1 - Data modelling intro
+
+**X -** REFERENCES
+
+1 - INTRODUCTION
+
+1.1 - About this project
+
+This kernel has been developed with the intent to put into practice our data science knowledge while learning in the process. 
+
+The dataset used for the analysis can be found at Kaggle using the following link: -add link-
+
+The software used to carry out the analysis was R and Tableau and Power BI perform the data visualisation.
+
+We hope this document can be useful to you as a reference on how to approach employee turnover analysis and visualisation as we cover the whole data analysis workflow process: from data exploration to building a dashboard that can be used by end users as self-service.
+
+Your feedback on how to improve the analysis or visualisations is more than welcome, so please feel free to leave it in the comments section.
+
+Hope you enjoy it!
+
+- Data Analysis Team - 
+
+1.2 - Project context
+
+Our client had always approached employee turnover data from a reporting point of view, focusing on what had happened in the past (i.e. what was the turnover rate in a business area last month) and comparing rates across business areas or locations. Although this was useful to some extent, it offered the organisation limited value in aiding decision making.
+
+A new CHRO (Chief Human Resources Officer) has recently joined our client and is championing a better use of people data in the Human Resources department and across the organisation. Based on his previous experience, the new CHRO knows that looking at generating insights related to employee turnover can be an impactful quick win that will help him to establish himself in his new role and be a strong push for his People Analytics agenda. 
+
+This is the reason our client, with the aforementioned CHRO as the client sponsor, has contacted us to carry out a piece of work with the following aims:
+
+1.	Identify where are the employee turnover hotspots
+2.	Understand what are the drivers of employee turnover
+3.	Build a data model that can forecast employee turnover
+4.	Build a "risk of leaving" score for each individual employee
+
+1.3 - Data provided by the client
+
+In order to carry out this project, our client shared with us a dataset of leavers information for 2017, which was comprised of the following variables:
+
+.	Satisfaction Level
+.	Last evaluation
+.	Number of projects
+.	Average monthly hours
+.	Time spent at the company
+.	Whether they have had a work accident
+.	Whether they have had a promotion in the last 5 years
+.	Departments (column sales)
+.	Salary
+.	Whether the employee has left
+
+"Whether the employee has left" is clearly the key variable of this dataset as it tells us whether the employee has left the organisation or not and will be using as the central point of our analysis and data modelling.
+
+The rest of the variables will allow us to identify the employee turnover hotspots, feed the data models and to build our dashboards.
+
+1.4 - Hypothesis
+
+Is good practice to first think about your data challenge in its context and to build some hypothesis before jumping into the actual data analysis.
+
+On this occasion, between us and the CHRO we came up with the following hypothesis that were tested in our analysis:
+
+.	Hypothesis 1: "Satisfaction level" is negatively correlated with "Whether the employee has left"
+.	Hypothesis 2: the lower the "time spent at the company" the higher the risk of leaving
+.	Hypothesis 3: the higher the "average monthly hours", the higher the risk of leaving
+
+These hypothesis were selected based on a literature review of academic papers published about employee turnover and on the information collected from semi-structured interviews carried out with stakeholders from our client.
+
+1.5 - Data Analysis Report Structure
+
+The following sections will describe the data analysis process that we carried out to tackle this challenge and to come up with an evidence based response to our client's questions and aims for this project.
+
+The structure for the rest of the report is as follows:
+
+1 - Data Cleaning
+2- Data Explorations
+3 - Data Modelling
+4 - Data Visualisation
+5 - Recommendations
+6 - Conclusion
+
+#Data Cleaning
+
+The process of data cleaning is the finding and correction of incorrect data in a table of data or database. This "dirty data" could be eliminated, modified or substituted for other data. There are several processes. For example, one process is the elimination or substitution of the missing data, or the elimination of non relevant variables. In a nutshell, is the process of preparation of our data to do the pertinent analysis.
+
+Another proccess that is not strictly data cleaning, but it is used to prepare our database, is the creation of new variables, that could help us in the subsequent analysis. 
+
+```{r}
+library(dplyr)
+library(readr)
+
+ds <- read_csv("~/Human_Resources_Analytics-Kaggle_DS/final_files/databases/HR_comma_sep.csv")
+```
+# Create new column: average number of prejects per year
+```{r}
+ds <- mutate(ds, projects_per_year = number_project/time_spend_company)
+```
+# Rename column sales to department
+```{r}
+ds <- rename(ds, department = sales)
+
+write_csv(ds, file.choose(new = TRUE))
+```
+=======
+We can see that our database requires very little cleaning, because there are no missing values. We only are going to create new variables that we think will be useful in the future. 
+
+#Data Exploration
+
+# 4.- EXPLORING THE DATA
+
+We have around 15.000 employees in our company, and we know about them: satisfaction_level, last_evaluation, number_project, average_monthly_hours, time_spend_company, work_accident, left, promotion_last_5years, sales and salary. 
+We make a exploratory table: 
+
+```{r}
+summary(HR_dataset)
+```
+
+We can see that the mean of satisfaction_level is around 0.61, or the performance average is around 0.71. Also the average_monthly_hours is around 200, time_spend_company is around 3.498 years on average and project_per_year is around 1.21 on average. Besides around 14,4% of our workers have a work and 23,81% of our workers left the work and only the 0.021% of the workers had a promotion on the last five years. 
+
+## 5.- NORMALITY OF VARIABLES
+We check the normality of variables with two graphs: histograms and box-plot. 
+
+```{r}
+attach(HR_dataset)
+par(mfrow=c(1,2))
+hist(satisfaction_level, col = "red", xlim = c(0,1))
+boxplot(satisfaction_level, col = "red", ylim= c(0,1), main = "Boxplot of Satisfaction_level")
+hist(last_evaluation, col = "purple", xlim = c(0,1))
+boxplot(last_evaluation, col = "purple", ylim= c(0,1), main = "Boxplot of Last_evaluation")
+hist(number_project, col="green", breaks = 7)
+boxplot(number_project, col="green", main = "Boxplot of number_project")
+hist(average_montly_hours, col = "pink", xlim= c(50, 350))
+boxplot(average_montly_hours, col = "pink", main = "Boxplot of Average_monthly_hours")
+hist(time_spend_company, col = "blue", breaks = 8)
+boxplot(time_spend_company, col = "blue", main = "Boxplot of time_spend_company")
+hist(project_per_year, col = "orange", xlim= c(0,3))
+boxplot(project_per_year, col = "orange", main = "Boxplot of project_per_year")
+
+```
+
+As we can see, there are only two variables that are not normal: time_spend_company and project_per_year. 
+Besides, we have 4 factors in our dataset with we can realise different graphs with two or more factors, as corrplots or barplots. 
+We make a corrplot and a scatterplot in order to see the relation between our variables. To do this, we need change our categorical variables into numeric variables. 
+
+
+```{r, message=FALSE}
+require(car)
+HR_dataset$salarynum<-recode(HR_dataset$salary, "'low'=1")
+HR_dataset$salarynum<-recode(HR_dataset$salarynum, "'medium'=2")
+HR_dataset$salarynum<-recode(HR_dataset$salarynum, "'high'=3")
+HR_dataset$salarynum<-as.numeric(HR_dataset$salarynum)
+
+library(dplyr)
+library(graphics)
+library(corrplot)
+
+
+```
+
+```{r}
+HR_dataset_corrplot <- select(HR_dataset, -sales, -salary)
+HR_correlation <- cor(HR_dataset_corrplot)
+library(corrplot)
+par(mfrow=c(1,2))
+corrplot(HR_correlation, method = "color", tl.cex = 0.6)
+corrplot(HR_correlation, method = "number", tl.cex = 0.6)
+par(mfrow=c(1,1))
+pairs(HR_correlation)
+```
+
+## 5.1.- WHO LEAVES THE COMPANY?
+
+We can ask ourselves, ''who are leaving the company?''. To answer this question, we can take only the leavers of the company and do barplots. 
+```{r, message=FALSE}
+library(ggplot2)
+HR_leavers <- subset(HR_dataset, HR_dataset$left == 1)
+attach(HR_leavers)
+```
+
+
+```{r}
+par(mfrow=c(1,1))
+hist(satisfaction_level, col = "blue", xlim = c(0,1))
+
+```
+
+Normally, people who leave the company usually have a medium or low level of satisfaction, but there are too many people with a high level of satisfaction that leaves the company. 
+
+```{r}
+hist(last_evaluation, col = "blue")
+```
+
+There are too many people with a high level of satisfaction in the last evaluation that left the company. 
+```{r}
+hist(number_project, col= "blue")
+
+```
+
+As we can see, workers that left the company has a low  level of number project, but there are a high number of workers that are leaving the comany whit a lot of projects. The same conclusion we can draw for the variables average monthly hours and time spend company
+
+```{r}
+hist(average_montly_hours, col= "blue")
+
+```
+
+```{r}
+hist(time_spend_company, col= "blue")
+
+```
+```{r}
+hist(Work_accident, col = "blue")
+```
+
+This is a curious case, since there are many workers who leave the company without having suffered an accident at work. On the other side, there are few workers who have suffered a work accident and leave the company.
+
+```{r}
+HR_dataset$salary<-factor(HR_dataset$salary,levels=c("low","medium","high")) 
+ggplot(HR_dataset,aes(x=salary, fill=factor(left)))+
+  geom_bar(stat='count',position='dodge')
+```
+
+
+In this graph we can see how the workers who leave the company are mostly low-wage workers, finding here a key to which workers leave the company and why.
+
+## 5.2.- ANALYSIS OF VARIANCE (ANOVA)
+
+Analysis of variance is a statistical model that finds the difference among group means through deviance analysis. 
+In a first step we will find categorical variables in our dataset and then we will apply anova on those. 
+```{r, message=FALSE}
+if (!require(RcmdrMisc)) install.packages("RcmdrMisc")
+library(RcmdrMisc)
+
+```
+```{r}
+sapply(HR_dataset, class)
+```
+
+We can see if we can find differente between salary levels: 
+```{r}
+AnovaModel.salary <- (lm(HR_dataset$left ~ salary, data=HR_dataset))
+Anova(AnovaModel.salary)
+
+with(HR_dataset, (tapply(HR_dataset$left, list(salary),
+                           mean, na.rm=TRUE)))
+
+```
+
+This test show us that the turnover rate is significantly different between salary levels. 
+This means that a worker who receives a low salary does not have the same degree of satisfaction as a worker who has a high salary. 
+We can do the same for sales and for the interaction between sales and salary as we can see in the following code: 
+
+```{r}
+AnovaModel.department <- (lm(HR_dataset$left ~ sales, data=HR_dataset))
+Anova(AnovaModel.department)
+
+with(HR_dataset, (tapply(HR_dataset$left, list(sales),
+                   mean, na.rm=TRUE)))
+AnovaModel.salary_and_department <- (lm(HR_dataset$left ~ salary*sales, data=HR_dataset))
+Anova(AnovaModel.salary_and_department)
+
+with(HR_dataset, (tapply(HR_dataset$left, list(salary,sales),
+                   mean, na.rm=TRUE)))
+```
+
+As we can see, there are difference between the different sales and the interaction between salary and sales is statistically significant. 
+
+## 5.3.- MANOVA-BIPLOT
+
+The next step is to characterize these statistically significant differences through a biplot method known as Manova-Biplot. The Biplot method (Gabriel, 1971; Galindo, 1986; Gower and Hand, 1996) is becoming one of the most popular techniques for analysing multivariate data. Biplot methods are techniques for simultaneous representation of the n rows and n columns of a data matrix \bf{X}, in reduced dimensions, where the rows represent individuals, objects or samples and the columns the variables measured on them.
+Several authors propose a Biplot representation for CVA called Canonical Biplot (CB) (Vicente-Villardon, 1992 and Gower & Hand, 1996) when it is oriented to the discrimination between groups or MANOVA-Biplot Gabriel (1972, 1995) when the aim is to study the variables responsible for the discrimination. 
+The main advantage of the Biplot version of the technique is that it is possible not only to establish the differences between groups but also to characterise the variables responsible for them.
+We are making a canonical-biplot or manova-biplot with confidence regions for the means of the groups. We can choose the variable that group our dataset. 
+First, we convert both variables salary and sales into factors:
+
+```{r, message=FALSE, warning=FALSE}
+library(readr)
+HR_comma_sep <- read_csv("C:/Users/danie/Desktop/HUMAN RESOURCES ANALYTICS - EQUIPO ANALISIS DE DATOS/HR_comma_sep.csv")
+View(HR_comma_sep)
+library(MultBiplotR)
+attach(HR_comma_sep)
+typeof(salary)
+HR_comma_sep$salary <- as.factor(HR_comma_sep$salary)
+typeof(HR_comma_sep$salary)
+typeof(sales)
+HR_comma_sep$sales <- as.factor(HR_comma_sep$sales)
+typeof(HR_comma_sep$sales)
+
+```
+
+Second, we only need numeric variables. So with dplyr we remove binary variables: 
+
+```{r, warning=FALSE}
+library(dplyr)
+Manovabiplot_dataset <- select(HR_comma_sep, -Work_accident, -left, -promotion_last_5years, -sales)
+Manova_biplot <- CanonicalBiplot(Manovabiplot_dataset[,1:5], Manovabiplot_dataset$salary, MANOVA = TRUE)
+summary(Manova_biplot)
+plot(Manova_biplot, LabelInd = FALSE)
+```
+
+We cannot see a clear difference between groups in this plot. 
+We will make the same plot but with sales in groups instead salary. 
+
+```{r}
+library(dplyr)
+Manovabiplot_dataset <- select(HR_comma_sep, -Work_accident, -left, -promotion_last_5years, -salary)
+Manova_biplot <- CanonicalBiplot(Manovabiplot_dataset[,1:5], Manovabiplot_dataset$sales, MANOVA = TRUE)
+summary(Manova_biplot)
+plot(Manova_biplot, LabelInd = FALSE)
+HJ_biplot <- HJ.Biplot(Manovabiplot_dataset[,1:5], dimension = 3)
+plot(HJ_biplot)
+```
+We don't get an interessant result neither Manova-Biplot and HJ Biplot, except the relation between variables. We can see how satisfaction_level and time_spend_company are inverse correlated which means that a person the more time spent in the company less satisfied are. 
+
+#DATA MODELLING
+
+Data modelling intro
+
+As a recap, two of our aims for this project were the following:
+
+1.	Build a data model that can forecast employee turnover
+2.	Build a "risk of leaving" score for each individual employee
+
+Although the client has only asked us to build "a data model", we want to showcase our analytical expertise and test different models that will approach the analysis differently and pick the top performer among them. This will give reassurance to our client that the model we have developed for them is robust and competitive.
+
+In order to pick the best performer amongst our models, we need to decide on what basis we are going to decide which model was the most appropriate. For this project we will use the accuracy of prediction as the criteria to determine the top performer.
+
+The data modelling techniques that we will employ are the following:
+
+1.	Logistic Regression - technique used to predict a binary variable (in our case whether our employee has left) built using predictors that can be continuous, categorical or a mix of both.
+
+2.	Discriminant Analysis - multivariate method to predict which group a new individual belongs. Can be used for the same objective than the logistic regression.
+
+3.	Biplot - graphic representation of rows and columns at the same time. Rows, usually individuals, are represented as dots and columns, usually variables, are represented as vectors.
+
+4.	Decision Tree - Decision trees are what's known as a glass-box model, after the model has found the patterns in the data you can see exactly what decisions will be made for unseen data that you want to predict. The algorithm starts with of all the data at the root node (drawn at the top) and scans all the variables for the best one to split on (1).
+
+5.	Random Forest - A collection of totally unique trees are generated, which all make their classi???cations di???erently, to then be ensemble in order to choose the best predictor (1).
+
+
+REFERENCES
+
+(1)	- trevorstephens.com/kaggletitanic-tutorial/r-part-3-decision-trees
+
+
+#Logistic Regression
+
+## 1.- LOADING DATASET
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+library(readr)
+HR_comma_sep_v2 <- read_csv("~/Human_Resources_Analytics-Kaggle_DS/final_files/databases/HR_comma_sep_v2.csv")
+```
+
+To make a prediction, first, the database must be divided between a train and test databases.
+
+## 2.- SPLIT TRAIN AND TEST DATABASE
+
+# 2.1.- Spliting the dataset
+```{r message=FALSE, warning=FALSE}
+library(caret)
+library(klaR)
+```
+
+Now we are going to define an 80%/20% train/test split of the dataset to have a part of the database that serves as control and another smaller part to test the model. 
+```{r}
+split<-0.80
+trainIndex <- createDataPartition(HR_comma_sep_v2$left, p=split, list=FALSE)
+train <- HR_comma_sep_v2[ trainIndex,]
+test <- HR_comma_sep_v2[-trainIndex,]
+```
+
+# 3.- LOGISTIC REGRESSION
+
+In statistics, logistic regression is a type of regression analysis used to predict the outcome of a categorical variable (a variable that can adopt a limited number of categories) based on independent or predictor variables.
+First, we make the model, and see how it fit our data.
+
+```{r}
+logistic<-glm(left~., family=binomial(link='logit'), data=HR_comma_sep_v2)
+summary(logistic)
+```
+We can see that the department variable is not significant (unless the department of RandD), but the rest of the variables are important.
+
+```{r message=FALSE, warning=FALSE}
+require(pscl)
+pR2(logistic)
+```
+Here we can analyze the McFadden index, that is 0.40. Our model is very good.
+
+## 3.1.- PREDICTION OF THE LOGISTIC REGRESSION
+Now we are going to do the prediction of the test database.
+
+```{r}
+fitted.results <- predict(logistic, newdata=test, type='response')
+fitted.results <- ifelse(fitted.results > 0.5,1,0)
+```
+
+And we will see the predictive accuracy of the model.
+```{r}
+misClasificError <- mean(fitted.results != test$left)
+print(paste('Accuracy',1-misClasificError))
+```
+The predictive power is high, with an 87% rate of success.
+
+```{r}
+table(test$left, fitted.results, dnn = c('Actual Group','Predicted Group'))
+```
+## 3.2.- ROC CURVE
+
+This graph is the representation of the ratio or ratio of true positives (VPR = True Positive Ratio) to the ratio or false positive rate (FPR = False Positive Ratio) also according to the discrimination threshold (value from of which we decided that a case is a positive).
+We can use the ROC curve to analyze the predictive power.
+
+```{r message=FALSE, warning=FALSE}
+require(ROCR)
+p <- predict(logistic, newdata=test, type="response")
+pr <- prediction(p, test$left)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+```
+
+The next step is to analyze the area under the ROC curve, whose maximum is 1; therefore, when measuring the area under the curve, the closer it is to the greater the prediction the model will have.
+
+```{r }
+auc <- performance(pr, measure = "auc")
+auc <- auc@y.values[[1]]
+auc
+```
+
+We can see here again that is a good predictive model cause the area under the Roc curve is closer to 1.
+
+# 3.3.- PREDICTION WITH CROSS-VALIDATION
+
+Now we are going to see the rate of success of the model with a Cross Validation, to have a more reliable result.
+
+```{r}
+library(caret)
+HR_comma_sep_v2$left<-as.factor(HR_comma_sep_v2$left)
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+model <- train(left~., data=HR_comma_sep_v2, trControl=train_control, method="glm")
+print(model)
+model$finalModel
+```
+
+Here we can see the coefficients of the different variables in the model, and the accuracy. It is on 87%, so it is a good model too. 
+
+# 4.- TEST WITH THE SIGNIFICANT VARIABLES
+
+Now we are going to remove the non significant variables to see if the model improves. We saw before that the department variable wasn't significant.
+
+```{r warning=FALSE, message=FALSE}
+require(dplyr)
+baselog<-select(HR_comma_sep_v2, -department)
+```
+
+
+Now, we do exactly the same we did before with our new model.
+
+```{r}
+logistic2<-glm(left~., family=binomial(link='logit'), data=baselog)
+summary(logistic2)
+```
+
+```{r}
+pR2(logistic2)
+```
+But we can see that the McFadden index is lower, so it describes worse our data.
+
+## 4.1.- PREDICTION OF THE LOGISTIC REGRESSION
+```{r}
+fitted.results2 <- predict(logistic2, newdata=test, type='response')
+fitted.results2 <- ifelse(fitted.results > 0.5,1,0)
+```
+
+```{r}
+misClasificError <- mean(fitted.results2 != test$left)
+print(paste('Accuracy',1-misClasificError))
+```
+The accuracy this time is more or less the same.
+
+```{r}
+table(test$left, fitted.results2, dnn = c('Actual Group','Predicted Group'))
+```
+## 4.2.- ROC CURVE
+
+We make again the ROC curve and the area under the curve. We can see that the accuracy of the model is similar to the model with all variables. 
+```{r}
+p <- predict(logistic2, newdata=test, type="response")
+pr <- prediction(p, test$left)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+```
+```{r }
+auc <- performance(pr, measure = "auc")
+auc <- auc@y.values[[1]]
+auc
+```
+
+## 4.3.- PREDICTION WITH CROSS-VALIDATION
+
+We make the cross-validation again: 
+```{r}
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+model2 <- train(left~., data=baselog, trControl=train_control, method="glm")
+print(model2)
+model2$finalModel
+```
+
+=======
+---
+title: "Logistic Regression"
+author: "Roberto Diaz"
+date: "15 de diciembre de 2017"
+output: pdf_document
+---
+
+## 1.- LOADING DATASET
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include=FALSE}
+library(readr)
+HR_comma_sep_v2 <- read_csv("~/Human_Resources_Analytics-Kaggle_DS/final_files/databases/HR_comma_sep_v2.csv")
+```
+
+To make a prediction, first, the database must be divided between a train and test databases.
+
+## 2.- SPLIT TRAIN AND TEST DATABASE
+
+# 2.1.- Spliting the dataset
+```{r message=FALSE}
+library(caret)
+library(klaR)
+```
+
+Now we are going to define an 80%/20% train/test split of the dataset to have a part of the database that serves as control and another smaller part to test the model. 
+```{r}
+split<-0.80
+trainIndex <- createDataPartition(HR_comma_sep_v2$left, p=split, list=FALSE)
+train <- HR_comma_sep_v2[ trainIndex,]
+test <- HR_comma_sep_v2[-trainIndex,]
+```
+
+# 3.- LOGISTIC REGRESSION
+
+In statistics, logistic regression is a type of regression analysis used to predict the outcome of a categorical variable (a variable that can adopt a limited number of categories) based on independent or predictor variables.
+First, we make the model, and see how it fit our data.
+
+```{r}
+logistic<-glm(left~., family=binomial(link='logit'), data=HR_comma_sep_v2)
+summary(logistic)
+```
+We can see that the department variable is not significant (unless the department of RandD), but the rest of the variables are important.
+
+```{r message=FALSE, warning=FALSE}
+require(pscl)
+pR2(logistic)
+```
+Here we can analyze the McFadden index, that is 0.40. Our model is very good.
+
+## 3.1.- PREDICTION OF THE LOGISTIC REGRESSION
+Now we are going to do the prediction of the test database.
+
+```{r}
+fitted.results <- predict(logistic, newdata=test, type='response')
+fitted.results <- ifelse(fitted.results > 0.5,1,0)
+```
+
+And we will see the predictive accuracy of the model.
+```{r}
+misClasificError <- mean(fitted.results != test$left)
+print(paste('Accuracy',1-misClasificError))
+```
+The predictive power is high, with an 87% rate of success.
+
+```{r}
+table(test$left, fitted.results, dnn = c('Actual Group','Predicted Group'))
+```
+## 3.2.- ROC CURVE
+
+This graph is the representation of the ratio or ratio of true positives (VPR = True Positive Ratio) to the ratio or false positive rate (FPR = False Positive Ratio) also according to the discrimination threshold (value from of which we decided that a case is a positive).
+We can use the ROC curve to analyze the predictive power.
+
+```{r message=FALSE, warning=FALSE}
+require(ROCR)
+p <- predict(logistic, newdata=test, type="response")
+pr <- prediction(p, test$left)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+```
+
+The next step is to analyze the area under the ROC curve, whose maximum is 1; therefore, when measuring the area under the curve, the closer it is to the greater the prediction the model will have.
+
+```{r }
+auc <- performance(pr, measure = "auc")
+auc <- auc@y.values[[1]]
+auc
+```
+
+We can see here again that is a good predictive model cause the area under the Roc curve is closer to 1.
+
+# 3.3.- PREDICTION WITH CROSS-VALIDATION
+
+Now we are going to see the rate of success of the model with a Cross Validation, to have a more reliable result.
+
+```{r}
+library(caret)
+HR_comma_sep_v2$left<-as.factor(HR_comma_sep_v2$left)
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+model <- train(left~., data=HR_comma_sep_v2, trControl=train_control, method="glm")
+print(model)
+model$finalModel
+```
+
+Here we can see the coefficients of the different variables in the model, and the accuracy. It is on 87%, so it is a good model too. 
+
+# 4.- TEST WITH THE SIGNIFICANT VARIABLES
+
+Now we are going to remove the non significant variables to see if the model improves. We saw before that the department variable wasn't significant.
+
+```{r warning=FALSE, message=FALSE}
+require(dplyr)
+baselog<-select(HR_comma_sep_v2, -department)
+```
+
+
+Now, we do exactly the same we did before with our new model.
+
+```{r}
+logistic2<-glm(left~., family=binomial(link='logit'), data=baselog)
+summary(logistic2)
+```
+
+```{r}
+pR2(logistic2)
+```
+But we can see that the McFadden index is lower, so it describes worse our data.
+
+## 4.1.- PREDICTION OF THE LOGISTIC REGRESSION
+```{r}
+fitted.results2 <- predict(logistic2, newdata=test, type='response')
+fitted.results2 <- ifelse(fitted.results > 0.5,1,0)
+```
+
+```{r}
+misClasificError <- mean(fitted.results2 != test$left)
+print(paste('Accuracy',1-misClasificError))
+```
+The accuracy this time is more or less the same.
+
+```{r}
+table(test$left, fitted.results2, dnn = c('Actual Group','Predicted Group'))
+```
+## 4.2.- ROC CURVE
+
+We make again the ROC curve and the area under the curve. We can see that the accuracy of the model is similar to the model with all variables. 
+```{r}
+p <- predict(logistic2, newdata=test, type="response")
+pr <- prediction(p, test$left)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+```
+```{r }
+auc <- performance(pr, measure = "auc")
+auc <- auc@y.values[[1]]
+auc
+```
+
+## 4.3.- PREDICTION WITH CROSS-VALIDATION
+
+We make the cross-validation again: 
+```{r}
+train_control <- trainControl(method="repeatedcv", number=10, repeats=3)
+model2 <- train(left~., data=baselog, trControl=train_control, method="glm")
+print(model2)
+model2$finalModel
+```
+
+And we can see that this model is sightly better than the former, so in this case, we could remove the "department" variable.
+
+#Disriminant analysis
+
+# 1. Load database and packages
+
+```{r include=FALSE}
+library(readr)
+HR_comma_sep_v2 <- read_csv("../../final_files/databases/HR_comma_sep_v2.csv")
+```
+
+```{r}
+library(caret)
+require(MASS)
+```
+
+**We define an 80%/20% train/test split of the dataset**
+```{r}
+split<-0.80
+trainIndex <- createDataPartition(HR_comma_sep_v2$left, p=split, list=FALSE)
+train <- HR_comma_sep_v2[ trainIndex,]
+test <- HR_comma_sep_v2[-trainIndex,]
+```
+
+
+# 2. DISCRIMINANT ANALYSIS
+First we train a discriminant analysis model using our training data set.
+
+```{r}
+lda <- lda(left ~.,data=train)
+lda
+```
+We can see the mean of each variable and the general probability to belong to the leavers and the non-leavers.
+
+## 2.2 PREDICTION
+
+Now we apply this model to our test data. 
+
+```{r}
+plda <- predict(object = lda, newdata = test)
+prcla<-plda$class
+table<-table(test$left, prcla, dnn = c('Actual Group','Predicted Group'))
+accuracy<-sum(diag(prop.table(table)))
+accuracy
+table
+```
+# 3. Results
+We can see that the accuracy is an 81% (worse than the logistic regression) and below we can see the table of the prediction and real data.
+
+Looking at the confusion matrix, we can extract that positive cases are being misclassified with a very high probability. Out of 687 positives in the training dataset, 369 were false negatives, with just a poor 47% recall (true positive rate or sensitivity).
+
+## 3.1 What does this mean?
+
+On the topic of fiding which employees are more likely to leave, we need to notice what the costs of a missclassification are.
+In the case of a false positive, we are taking measures to keep an employee that was already going to stay. Although we devoted resources to a non-leaver, this will (presumably) still positively impact his happiness and performance, so it would not be a complete failure. In the case of a false negative, however, the cost will be one of our employees. No bright side.
+All this roughly means that a high recall is desirable over aspects like specificity (more important when costs of a false positive overpass the others).
+A random classifier would assign the positive class to 50% of all cases, so it's recall rate would be exactly 50%. 
+Thus, applying this discriminant analysis model will be objectively worse than applying a random classifier.
+
+## 3.2 Plot the LDA
+```{r warning=FALSE, message=FALSE}
+require(ggplot2)
+require(scales)
+require(gridExtra)
+```
+```{r warning=FALSE, message=FALSE}
+prop.lda <- lda$svd^2/sum(lda$svd^2)
+test$left<-factor(test$left)
+dataset<-data.frame(left = test[,"left"], lda = plda$x)
+p1 <- ggplot(dataset) + geom_point(aes(plda$x, plda$x, colour = left, shape = left), size = 2.5) + 
+  labs(x = paste("LD1 (", percent(prop.lda[1]), ")", sep=""),
+       y = paste("LD2 (", percent(prop.lda[2]), ")", sep=""))
+p1
+```
+
+Here, we can see that there are more mistakes in our model, because one can see more mixed colours.
+
+## 3.3 CROSS VALIDATION
+
+Now we are going to do a cross validation of our model, and see the accuracy and the table of it.
+```{r}
+ldacv<-lda(left ~.,data=HR_comma_sep_v2, CV=TRUE)
+probstay<-ldacv$posterior[,1]
+predictioncv<-ifelse(probstay<0.5, 1, 0)
+reavalues<-HR_comma_sep_v2$left
+table<-table(HR_comma_sep_v2$left, predictioncv, dnn = c('Actual Group','Predicted Group'))
+accuracy<-sum(diag(prop.table(table)))
+accuracy
+table
+```
+The accuracy is sightly better when applied the cross validation. 
+=======
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. Load database and packages
+
+```{r include=FALSE}
+library(readr)
+HR_comma_sep_v2 <- read_csv("../../final_files/databases/HR_comma_sep_v2.csv")
+```
+
+```{r}
+library(caret)
+require(MASS)
+```
+
+**We define an 80%/20% train/test split of the dataset**
+```{r}
+split<-0.80
+trainIndex <- createDataPartition(HR_comma_sep_v2$left, p=split, list=FALSE)
+train <- HR_comma_sep_v2[ trainIndex,]
+test <- HR_comma_sep_v2[-trainIndex,]
+```
+
+
+# 2. DISCRIMINANT ANALYSIS
+First we train a discriminant analysis model using our training data set.
+
+```{r}
+lda <- lda(left ~.,data=train)
+lda
+```
+We can see the mean of each variable and the general probability to belong to the leavers and the non-leavers.
+
+## 2.2 PREDICTION
+
+Now we apply this model to our test data. 
+
+```{r}
+plda <- predict(object = lda, newdata = test)
+prcla<-plda$class
+table<-table(test$left, prcla, dnn = c('Actual Group','Predicted Group'))
+accuracy<-sum(diag(prop.table(table)))
+accuracy
+table
+```
+# 3. Results
+We can see that the accuracy is an 81% (worse than the logistic regression) and below we can see the table of the prediction and real data.
+
+Looking at the confusion matrix, we can extract that positive cases are being misclassified with a very high probability. Out of 687 positives in the training dataset, 369 were false negatives, with just a poor 47% recall (true positive rate or sensitivity).
+
+## 3.1 What does this mean?
+
+On the topic of fiding which employees are more likely to leave, we need to notice what the costs of a missclassification are.
+In the case of a false positive, we are taking measures to keep an employee that was already going to stay. Although we devoted resources to a non-leaver, this will (presumably) still positively impact his happiness and performance, so it would not be a complete failure. In the case of a false negative, however, the cost will be one of our employees. No brigh side.
+All this roughly means that a high recall is desirable over aspects like specificity (more important when costs of a false positive overpass the others).
+A random classifier would assign the positive class to 50% of all cases, so it's recall rate would be exactly 50%. 
+Thus, applying this discriminant analysis model will be objectively worse than applying a random classifier.
+
+## 3.2 Plot the LDA
+```{r warning=FALSE, message=FALSE}
+require(ggplot2)
+require(scales)
+require(gridExtra)
+```
+```{r warning=FALSE, message=FALSE}
+prop.lda <- lda$svd^2/sum(lda$svd^2)
+test$left<-factor(test$left)
+dataset<-data.frame(left = test[,"left"], lda = plda$x)
+p1 <- ggplot(dataset) + geom_point(aes(plda$x, plda$x, colour = left, shape = left), size = 2.5) + 
+  labs(x = paste("LD1 (", percent(prop.lda[1]), ")", sep=""),
+       y = paste("LD2 (", percent(prop.lda[2]), ")", sep=""))
+p1
+```
+
+Here, we can see that there are more mistakes in our model, because one can see more mixed colours.
+
+## 3.3 CROSS VALIDATION
+
+Now we are going to do a cross validation of our model, and see the accuracy and the table of it.
+```{r}
+ldacv<-lda(left ~.,data=HR_comma_sep_v2, CV=TRUE)
+probstay<-ldacv$posterior[,1]
+predictioncv<-ifelse(probstay<0.5, 1, 0)
+reavalues<-HR_comma_sep_v2$left
+table<-table(HR_comma_sep_v2$left, predictioncv, dnn = c('Actual Group','Predicted Group'))
+accuracy<-sum(diag(prop.table(table)))
+accuracy
+table
+```
+The accuracy is sightly better when applied the cross validation. 
+
+#Biplot
+
+# 1. Loading packages and database
+
+```{r include=FALSE}
+library(readr)
+HR_comma_sep_v2 <- read_csv("~/Human_Resources_Analytics-Kaggle_DS/final_files/databases/HR_comma_sep_v2.csv")
+```
+
+```{r include=FALSE}
+install.packages("http://biplot.usal.es/classicalbiplot/multbiplot-in-r/multbiplotrtar.gz", repos = NULL, type="source")
+```
+To do a biplot analysis, first, we need the package "MultBiplotR".
+```{r warning=FALSE, message=FALSE}
+require(MultBiplotR)
+```
+
+We need all our variables to be cuantitative to be able to do a biplot. 
+
+```{r warning=FALSE, message=FALSE}
+require(dplyr)
+cuanti<-select(HR_comma_sep_v2, -c(department, salary))
+```
+
+## 1.1 Feature engineering
+
+We are going to recode the variable satisfaction level to a qualitative variable see the different levels if different colours in our plot. We are going to do the same in our plot with the salary.
+
+```{r warning=FALSE, message=FALSE}
+require(car)
+cuanti$satisnom<-recode(cuanti$satisfaction_level, "0.01:0.25='VL'")
+cuanti$satisnom<-recode(cuanti$satisnom, "0.26:0.50='L'")
+cuanti$satisnom<-recode(cuanti$satisnom, "0.51:0.75='H'")
+cuanti$satisnom<-recode(cuanti$satisnom, "0.76:1='VH'")
+cuanti$satisnom<-as.factor(cuanti$satisnom)
+```
+
+It is advisable to first standarize the data set before performing a biplot on it
+
+```{r}
+biplot<-PCA.Biplot(scale(cuanti[1:9]))
+plot(biplot)
+```
+
+
+# 2. PCA-BIPLOT
+
+
+In this plot we can barely do some interpretation (besides the relationship between variables), so we are going to delete the Labels and put some colour.
+
+```{r warning=FALSE, message=FALSE}
+biplot=AddCluster2Biplot(biplot, ClusterType="us", Groups=cuanti$satisnom)
+plot(biplot, LabelInd = FALSE, xlim=c(-4,4), ylim=c(-4,4), CexInd=0, PlotClus = TRUE, TypeClus = "ch", ClustCenters = T)
+```
+We can see here the relationship between variables. We can see that the "montly hours"", the "last evaluation"" and the "number of projects"", are very correlated between them, but those three are incorrelated to the "left"" varaible, the "time spent in the company"", and the "satisfaction level". The latter are negatively correlated with the first two variables. Lastly, we can see that the "work accident"" variable and the "promotion"" variable are not well represented in the first two dimensions. 
+
+We can see that the clusters are all in the same place, although a little displaced having in mind the satisfaction level vector (which is obvious, because the colours are the levels of the satisfaction level). 
+
+```{r}
+plot(biplot, LabelInd = FALSE, CexInd=0.5, ColorInd=cuanti$satisnom)
+legend(x="topright", c("VL", "L", "H", "VH"), pch=1, col=c("Purple", "Green", "Red", "Skyblue"))
+```
+
+Now we are going to do the same with salary, to separate the different levels of salary with colours.
+
+```{r}
+HR_comma_sep_v2$salary<-as.factor(HR_comma_sep_v2$salary)
+```
+
+```{r}
+biplot=AddCluster2Biplot(biplot, ClusterType="us", Groups=HR_comma_sep_v2$salary)
+plot(biplot, LabelInd = FALSE, xlim=c(-4,4), ylim=c(-4,4), CexInd=0, PlotClus = TRUE, TypeClus = "ch", ClustCenters = T)
+```
+The clusters are all in the same place, so the individuals cannot be interpretated too.
+
+
+```{r}
+plot(biplot, LabelInd = FALSE, CexInd=0.5, ColorInd=HR_comma_sep_v2$salary)
+legend(x="topright", c("LOW", "MEDIUM", "HIGH"), pch=1, col=c("Green", "Blue", "Red"))
+```
+
+
+# 3. HJ-BIPLOT
+
+An HJ-Biplot has a good representation on both variables and individuals, but it is supposed that it doesn?t represent well the original data.
+```{r}
+hjbiplot<-HJ.Biplot(scale(cuanti[1:9]))
+plot(hjbiplot)
+```
+We can see that the vectors of the variables are too long compared to the dispersion of the individuals, so we have to zoom to see the situation of them. Doing that, we cannot see which vector belongs to which variable, so we have to remember the first plot. The relationship between variables is the same that we saw in the PCA Biplot.
+```{r}
+plot(hjbiplot, xlim=c(-4,4), ylim=c(-4,4))
+```
+
+```{r}
+hjbiplot=AddCluster2Biplot(hjbiplot, ClusterType="us", Groups=cuanti$satisnom)
+plot(hjbiplot, LabelInd = FALSE, xlim=c(-4,4), ylim=c(-4,4), CexInd=0, PlotClus = TRUE, TypeClus = "ch", ClustCenters = T)
+```
+```{r}
+plot(hjbiplot, LabelInd = FALSE, CexInd=0.5, xlim=c(-4,4), ylim=c(-4,4), ColorInd=cuanti$satisnom)
+legend(x="topright", c("VL", "L", "H", "VH"), pch=1, col=c("Purple", "Green", "Red", "Skyblue"))
+```
+In these plots we cannot interpretate more information than the PCA-Biplot.
+
+```{r}
+hjbiplot=AddCluster2Biplot(hjbiplot, ClusterType="us", Groups=HR_comma_sep_v2$salary)
+plot(hjbiplot, LabelInd = FALSE, xlim=c(-4,4), ylim=c(-4,4), CexInd=0, PlotClus = TRUE, TypeClus = "ch", ClustCenters = T)
+```
+```{r}
+plot(hjbiplot, LabelInd = FALSE, CexInd=0.5, xlim=c(-4,4), ylim=c(-4,4), ColorInd=HR_comma_sep_v2$salary)
+legend(x="topright", c("LOW", "MEDIUM", "HIGH"), pch=1, col=c("Green", "Blue", "Red"))
+```
+=======
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1. Loading packages and database
+
+```{r include=FALSE}
+library(readr)
+HR_comma_sep_v2 <- read_csv("~/Human_Resources_Analytics-Kaggle_DS/final_files/databases/HR_comma_sep_v2.csv")
+```
+
+```{r include=FALSE}
+install.packages("http://biplot.usal.es/classicalbiplot/multbiplot-in-r/multbiplotrtar.gz", repos = NULL, type="source")
+```
+To do a biplot analysis, first, we need the package "MultBiplotR".
+```{r warning=FALSE, message=FALSE}
+require(MultBiplotR)
+```
+
+We need all our variables to be cuantitative to be able to do a biplot. 
+
+```{r warning=FALSE, message=FALSE}
+require(dplyr)
+cuanti<-select(HR_comma_sep_v2, -c(department, salary))
+```
+
+## 1.1 Feature engineering
+
+We are going to recode the variable satisfaction level to a qualitative variable see the different levels if different colours in our plot. We are going to do the same in our plot with the salary.
+
+```{r warning=FALSE, message=FALSE}
+require(car)
+cuanti$satisnom<-recode(cuanti$satisfaction_level, "0.01:0.25='VL'")
+cuanti$satisnom<-recode(cuanti$satisnom, "0.26:0.50='L'")
+cuanti$satisnom<-recode(cuanti$satisnom, "0.51:0.75='H'")
+cuanti$satisnom<-recode(cuanti$satisnom, "0.76:1='VH'")
+cuanti$satisnom<-as.factor(cuanti$satisnom)
+```
+
+It is advisable to first standarize the data set before performing a biplot on it
+
+```{r}
+biplot<-PCA.Biplot(scale(cuanti[1:9]))
+plot(biplot)
+```
+
+
+# 2. PCA-BIPLOT
+
+
+In this plot we can barely do some interpretation (besides the relationship between variables), so we are going to delete the Labels and put some colour.
+
+```{r warning=FALSE, message=FALSE}
+biplot=AddCluster2Biplot(biplot, ClusterType="us", Groups=cuanti$satisnom)
+plot(biplot, LabelInd = FALSE, xlim=c(-4,4), ylim=c(-4,4), CexInd=0, PlotClus = TRUE, TypeClus = "ch", ClustCenters = T)
+```
+We can see here the relationship between variables. We can see that the "montly hours"", the "last evaluation"" and the "number of projects"", are very correlated between them, but those three are incorrelated to the "left"" varaible, the "time spent in the company"", and the "satisfaction level". The latter are negatively correlated with the first two variables. Lastly, we can see that the "work accident"" variable and the "promotion"" variable are not well represented in the first two dimensions. 
+
+We can see that the clusters are all in the same place, although a little displaced having in mind the satisfaction level vector (which is obvious, because the colours are the levels of the satisfaction level). 
+
+```{r}
+plot(biplot, LabelInd = FALSE, CexInd=0.5, ColorInd=cuanti$satisnom)
+legend(x="topright", c("VL", "L", "H", "VH"), pch=1, col=c("Purple", "Green", "Red", "Skyblue"))
+```
+
+Now we are going to do the same with salary, to separate the different levels of salary with colours.
+
+```{r}
+HR_comma_sep_v2$salary<-as.factor(HR_comma_sep_v2$salary)
+```
+
+```{r}
+biplot=AddCluster2Biplot(biplot, ClusterType="us", Groups=HR_comma_sep_v2$salary)
+plot(biplot, LabelInd = FALSE, xlim=c(-4,4), ylim=c(-4,4), CexInd=0, PlotClus = TRUE, TypeClus = "ch", ClustCenters = T)
+```
+The clusters are all in the same place, so the individuals cannot be interpretated too.
+
+
+```{r}
+plot(biplot, LabelInd = FALSE, CexInd=0.5, ColorInd=HR_comma_sep_v2$salary)
+legend(x="topright", c("LOW", "MEDIUM", "HIGH"), pch=1, col=c("Green", "Blue", "Red"))
+```
+
+
+# 3. HJ-BIPLOT
+
+An HJ-Biplot has a good representation on both variables and individuals, but it is supposed that it doesn?t represent well the original data.
+```{r}
+hjbiplot<-HJ.Biplot(scale(cuanti[1:9]))
+plot(hjbiplot)
+```
+We can see that the vectors of the variables are too long compared to the dispersion of the individuals, so we have to zoom to see the situation of them. Doing that, we cannot see which vector belongs to which variable, so we have to remember the first plot. The relationship between variables is the same that we saw in the PCA Biplot.
+```{r}
+plot(hjbiplot, xlim=c(-4,4), ylim=c(-4,4))
+```
+
+```{r}
+hjbiplot=AddCluster2Biplot(hjbiplot, ClusterType="us", Groups=cuanti$satisnom)
+plot(hjbiplot, LabelInd = FALSE, xlim=c(-4,4), ylim=c(-4,4), CexInd=0, PlotClus = TRUE, TypeClus = "ch", ClustCenters = T)
+```
+```{r}
+plot(hjbiplot, LabelInd = FALSE, CexInd=0.5, xlim=c(-4,4), ylim=c(-4,4), ColorInd=cuanti$satisnom)
+legend(x="topright", c("VL", "L", "H", "VH"), pch=1, col=c("Purple", "Green", "Red", "Skyblue"))
+```
+In these plots we cannot interpretate more information than the PCA-Biplot.
+
+```{r}
+hjbiplot=AddCluster2Biplot(hjbiplot, ClusterType="us", Groups=HR_comma_sep_v2$salary)
+plot(hjbiplot, LabelInd = FALSE, xlim=c(-4,4), ylim=c(-4,4), CexInd=0, PlotClus = TRUE, TypeClus = "ch", ClustCenters = T)
+```
+```{r}
+plot(hjbiplot, LabelInd = FALSE, CexInd=0.5, xlim=c(-4,4), ylim=c(-4,4), ColorInd=HR_comma_sep_v2$salary)
+legend(x="topright", c("LOW", "MEDIUM", "HIGH"), pch=1, col=c("Green", "Blue", "Red"))
+```
+
+#Decision Tree
+
+# 1.- LOADING THE DATASET AND THE REQUIRED PACKAGES
+
+In a first step we will load the dataset from our directory and we will load the required packages, like formattable. We need this package in order to do the decision tree analysis. 
+
+```{r, message=FALSE}
+library(readr)
+HR_comma_sep_v2 <- read_csv("C:/Users/danie/Desktop/HUMAN RESOURCES ANALYTICS - EQUIPO ANALISIS DE DATOS/HR_comma_sep.csv")
+View(HR_comma_sep_v2)
+```
+
+We look for if there are null values in our database, and if there are any, we clean them.
+
+```{r}
+which(is.na(HR_comma_sep_v2))
+```
+As we can see, there aren't null values in our dataset so we can proceed to create a new variable, named project per year that comes of the quotient between the number of projects and the time in the company
+
+```{r, message=FALSE}
+data <- HR_comma_sep_v2
+View(data)
+```
+
+```{r, message=FALSE}
+summary(data)
+if (!require(formattable)) install.packages("formattable")
+library(formattable)
+```
+
+```{r}
+require(dplyr)
+data %>% 
+  count(salary) %>% 
+  formattable(align = 'l')
+```
+
+## 1.1.- Data preparation
+We split our dataset into 2/3 to have a part of the database as train and another as a test.
+
+```{r}
+n <- nrow(data)
+idx <- sample(n, n * .66)
+```
+
+We make some small changes, such as converting the left variable into a factor and sorting by class the salary variable. 
+```{r warning=FALSE}
+data %>% 
+  mutate(
+    left = factor(left, labels = c("Remain", "Left")),
+    salary = ordered(salary, c("low", "medium", "high"))
+  ) -> d
+
+```
+
+And we divide the dataset into train and test. 
+
+```{r}
+train <- d[idx, ]
+test <- d[-idx, ]
+```
+
+# 2.- RUN THE DECISION TREE MODEL
+
+A decision tree is a decision support tool that uses a tree-like graph or model of decisions and their possible consequences, including chance event outcomes, resource costs, and utility. It is one way to display an algorithm that only contains conditional control statements.
+
+In decision analysis, a decision tree and the closely related influence diagram are used as a visual and analytical decision support tool, where the expected values (or expected utility) of competing alternatives are calculated.
+
+A decision tree consists of three types of nodes:
+
+Decision nodes - typically represented by squares
+Chance nodes - typically represented by circles
+End nodes - typically represented by triangles
+
+```{r, message=FALSE, warning=FALSE}
+require(rpart)
+require(rpart.plot)
+tree <- rpart(left ~ ., data = train)
+res <- predict(tree, test)
+```
+
+```{r warning=FALSE, message=FALSE}
+if (!require(Metrics)) install.packages("Metrics")
+library(Metrics)
+auc(as.numeric(test$left) - 1, res[, 2])
+```
+
+
+As we can see in the code above we obtain a high precision of our model, so we can go on to graph it:
+
+```{r}
+rpart.plot(tree, type = 2, fallen.leaves = F, cex = 1, extra = 2)
+```
+
+## Interpreting the decision tree
+
+1 - The most important variable is satisfaction level. If its higher than 0.46 you are much more likely to stay.
+
+2 - If you have high satisfaction, having worked less than 4.5 years make you more likely to remain.
+
+3 - If you have low satisfaction, the number of projects becomes important - more than 2.5 projects make you more likely to stay.
+
+# 3.- MAKING PREDICTIONS AND ASSESSING ACCURACY OF THE DECISION TREE MODEL
+
+We can evaluate the accuracy of our model with the dataset test:
+
+```{r}
+Prediction <- predict(tree, test,type ="class")
+```
+
+```{r}
+misClasificError <- mean(Prediction !=test$left)
+print(paste('Accuracy',1-misClasificError))
+```
+
+```{r}
+submit <- data.frame(SatisfactionLevel=test$satisfaction_level,Leaver=Prediction)
+write.csv(submit,file="Human Resources Analytics - Decision Tree Predictions.csv",row.names=FALSE)
+```
+
+
+As we can see, the accuracy of our model even in the dataset test is very high, higher than 95%, which means that the decision tree correctly classifies 96.6% of the individuals who leave or remain in the company.
+=======
+---
+title: "Decision Tree"
+author: "Daniel El Sabbagh Velasco"
+date: "4 de febrero de 2018"
+output: html_document
+---
+# 1.- LOADING THE DATASET AND THE REQUIRED PACKAGES
+
+In a first step we will load the dataset from our directory and we will load the required packages, like formattable. We need this package in order to do the decision tree analysis. 
+
+```{r, message=FALSE}
+library(readr)
+HR_comma_sep <- read_csv("C:/Users/danie/Desktop/HUMAN RESOURCES ANALYTICS - EQUIPO ANALISIS DE DATOS/HR_comma_sep.csv")
+View(HR_comma_sep)
+```
+
+We look for if there are null values in our database, and if there are any, we clean them.
+
+```{r}
+which(is.na(HR_comma_sep))
+```
+As we can see, there aren't null values in our dataset so we can proceed to create a new variable, named project per year that comes of the quotient between the number of projects and the time in the company
+
+```{r, message=FALSE}
+
+library(dplyr)
+data <- mutate(HR_comma_sep, project_per_year = number_project/time_spend_company)
+View(data)
+```
+
+```{r, message=FALSE}
+summary(data)
+if (!require(formattable)) install.packages("formattable")
+library(formattable)
+```
+
+```{r}
+data %>% 
+  count(salary) %>% 
+  formattable(align = 'l')
+```
+
+## 1.1.- Data preparation
+We split our dataset into 2/3 to have a part of the database as train and another as a test.
+
+```{r}
+n <- nrow(data)
+idx <- sample(n, n * .66)
+```
+
+We make some small changes, such as converting the left variable into a factor and sorting by class the salary variable. 
+```{r}
+data %>% 
+  mutate(
+    left = factor(left, labels = c("Remain", "Left")),
+    salary = ordered(salary, c("low", "medium", "high"))
+  ) -> d
+
+```
+
+And we divide the dataset into train and test. 
+
+```{r}
+train <- d[idx, ]
+test <- d[-idx, ]
+```
+
+# 2.- RUN THE DECISION TREE MODEL
+
+A decision tree is a decision support tool that uses a tree-like graph or model of decisions and their possible consequences, including chance event outcomes, resource costs, and utility. It is one way to display an algorithm that only contains conditional control statements.
+
+In decision analysis, a decision tree and the closely related influence diagram are used as a visual and analytical decision support tool, where the expected values (or expected utility) of competing alternatives are calculated.
+
+A decision tree consists of three types of nodes:
+
+Decision nodes - typically represented by squares
+Chance nodes - typically represented by circles
+End nodes - typically represented by triangles
+
+```{r, message=FALSE}
+require(rpart)
+require(rpart.plot)
+tree <- rpart(left ~ ., data = train)
+res <- predict(tree, test)
+```
+
+```{r}
+if (!require(Metrics)) install.packages("Metrics")
+library(Metrics)
+auc(as.numeric(test$left) - 1, res[, 2])
+```
+
+
+As we can see in the code above we obtain a high precision of our model, so we can go on to graph it:
+
+```{r}
+rpart.plot(tree, type = 2, fallen.leaves = F, cex = 1, extra = 2)
+```
+
+## Interpreting the decision tree
+
+1 - The most important variable is satisfaction level. If its higher than 0.46 you are much more likely to stay.
+
+2 - If you have high satisfaction, having worked less than 4.5 years make you more likely to remain.
+
+3 - If you have low satisfaction, the number of projects becomes important - more than 2.5 projects make you more likely to stay.
+
+# 3.- MAKING PREDICTIONS AND ASSESSING ACCURACY OF THE DECISION TREE MODEL
+
+We can evaluate the accuracy of our model with the dataset test:
+
+```{r}
+Prediction <- predict(tree, test,type ="class")
+```
+
+```{r}
+misClasificError <- mean(Prediction !=test$left)
+print(paste('Accuracy',1-misClasificError))
+```
+
+```{r}
+submit <- data.frame(SatisfactionLevel=test$satisfaction_level,Leaver=Prediction)
+write.csv(submit,file="Human Resources Analytics - Decision Tree Predictions.csv",row.names=FALSE)
+```
+
+
+As we can see, the accuracy of our model even in the dataset test is very high, higher than 95%, which means that the decision tree correctly classifies 96.6% of the individuals who leave or remain in the company.
+>>>>>>> d74923971c43992062aef71806c98514433ccbed
+
+#CROSS VaLIDaTION
+```{r}
+require(rpart)
+n<-nrow(data)
+K<-23
+taille<-n%/%K
+set.seed(5)
+alea<-runif(n)
+rang<-rank(alea)
+bloc<-(rang-1)%/%taille+1
+bloc<-as.factor(bloc)
+print(summary(bloc)[1:23])
+```
+```{r}
+all.err<-numeric(0)
+for (k in 1:K) {
+   arbre<-rpart(left ~., data=data[bloc!=k,], method="class")
+   pred<-predict(arbre, newdata=data[bloc==k,], type="class")
+   mc<-table(data$left[bloc==k], pred)
+   err<-1.0-(mc[1,1]+mc[2,2])/sum(mc)
+   all.err<-rbind(all.err,err)
+}
+```
+```{r}
+print(all.err)
+all.acc<-abs(1-all.err)
+print(all.acc)
+```
+
+```{r}
+err.cv<-mean(all.err)
+accuracy<-abs(1-err.cv)
+print(accuracy)
+```
+
+#Random Forest 
+
+Random forests are learning methods of regression, clasification or other tasks. It is a combination of decision trees, and it gives the Measures of Central Tendency of the outputs of these trees. The results could be the mode (clasification), or the mean (regression) of the outputs.
+
+It is a very popular method of prediction because it is very simple to train and adjust. It is one of the most accurate algorithms, it is very accurate with big databases, and it can manage hundreds of variables. also, it gives an estimation of the most important variables. Unfortunately, the classification of the random forest is hard to interpretate. Lastly, other disadvantage is that the model is very sensible to overfitting.
+
+
+ 1 - LOAD THE DATA
+ 2 - LOGISTIC REGRESSION
+ 3 - ASSESSING THE PREDICTIVE ABILITY OF THE RANDOM FOREST MODEL
+
+# 1 - LOAD THE DATA
+```{r include=FALSE}
+library(readr)
+data <- HR_comma_sep_v2 <- read_csv("~/Human_Resources_Analytics-Kaggle_DS/final_files/databases/HR_comma_sep_v2.csv") # Remeber to set the working directory for this line of code to work
+```
+
+We are going to create the test and train datasets, splitting our data, to do a prediction using our Random Forest. 
+```{r}
+n <- nrow(data)
+idx <- sample(n, n * .66) # so that the split is 2/3 of the data
+
+train <- data[idx, ]
+test <- data[-idx, ]
+
+dim(test)
+dim(train)
+```
+These are the dimensions of our new data.
+
+# 2- RANDOM FOREST
+
+First we have to set the seed of R‘s random number generator, useful to reproduce simulations or random objects.
+```{r}
+set.seed(2017)
+```
+
+The below code will install the rpart package if it doesn't exist, and then load it.
+```{r warning=FALSE, message=FALSE}
+if (!require(rpart)) install.packages("rpart")
+library(rpart)
+
+attach(train)
+```
+
+Now we load the randomForest library.
+The below code will install the randomForest package if it doesn't exist, and then load it
+```{r warning=FALSE, message=FALSE}
+if (!require(randomForest)) install.packages("randomForest")
+library(randomForest)
+```
+
+Now we run the Random Forest model. We have to transform character variables to factors to run.
+```{r}
+train$department<-as.factor(train$department)
+train$salary<-as.factor(train$salary)
+
+fit <- randomForest(as.factor(train$left)~.,
+                    data=train,
+                    importance=TRUE,
+                    ntree=2000)
+```
+
+With this we can visualise what variables are important:
+```{r}
+varImpPlot(fit)
+```
+There's two types of importance measures shown above.
+1 - The accuracy one tests to see how worse the model performs without each variable, so a high decrease in
+accuracy would be expected for very predictive variables.
+2 - The Gini one digs into the mathematics behind decision trees, but essentially measures how pure the
+nodes are at the end of the tree. Again it tests to see the result if each variable is taken out and a high score means the variable was important.
+
+# 3 - ASSESSING THE PREDICTIVE ABILITY OF THE RANDOM FOREST MODEL
+
+Generate the prediction of the random forest on the test dataset using the last model generated using the train_cleaned database.
+
+Prediction on the test dataset
+```{r}
+test$department<-as.factor(test$department)
+test$salary<-as.factor(test$salary)
+
+Prediction <- predict(fit, test)
+```
+
+Assess the accuracy of the random forest model using the test dataset.
+```{r}
+misClasificError <- mean(Prediction !=test$left)
+print(paste('Accuracy',1-misClasificError))
+```
+As we can see, the accuracy is very high. Say something about the overfitting.
+```{r}
+require(rfUtilities)
+
+rf.cv<-rf.crossValidation(fit, train, p = 0.1, n = 10, ntree=2000)
+```
+```{r}
+require(caret)
+train$left<-as.factor(train$left)
+train_control <- trainControl(method="repeatedcv", number=3, repeats=3)
+model <- train(left~., data=train, trControl=train_control, method="rf")
+print(model)
+```
+
+#DATA MODEL COMPARISON
+
+To compare the different techiques of our project, we will analyze the accuracy of each method to see which model has the highest. Each model makes a prediction of each individual and assigns it to a group. Some predictions fail, some succeed. The accuracy is the percentage of correct predictions, and it should tells us how good is each model.
+
+In the four techniques we have selected, these are the accuracy of each one:
+
+-Logistic Regression 0.865288
+##We did again the Logistic Regression but with non-significant variables to see if the model improves. It did slightly. 0.865288
+
+-Discriminant Analysis 0.8152718
+
+-Decision Tree 0.9678431
+
+-Random Forest 0.9905882
+
+We have to be careful with the overfitting, though. The overfitting, as the same name says, happen when a model is overtrained to a specific dataset which we know the results. The consequence is that the model predicts almost perfectly the specific data we have, but performs poorly with other data. Because of that, the accuracy of that model is not real, and because of that, we have to avoid the overfitting as we can. 
+
+-Logistic Regression 0.8717694
+##We did again the Logistic Regression but with non-significant variables to see if the model improves. It did slightly. 0.874014
+
+-Discriminant Analysis 0.8179879
+
+-Decision Tree 0.9721259
+
+-Random Forest 0.9901334
+
+Difference accuracy cross-validation and raw
+
+
+Random Forest 
+
+9899 samples
+  10 predictor
+   2 classes: '0', '1' 
+
+No pre-processing
+Resampling: Cross-Validated (10 fold, repeated 3 times) 
+Summary of sample sizes: 8909, 8909, 8908, 8909, 8909, 8910, ... 
+Resampling results across tuning parameters:
+
+  mtry  Accuracy   Kappa    
+   2    0.9745762  0.9273550
+  10    0.9901334  0.9723405
+  19    0.9888539  0.9688391
+
+Accuracy was used to select the optimal model using the largest value.
+The final value used for the model was mtry = 10.
+```{r}
+Log<-c(0.865288, 0.8717694)
+Dis<-c(0.8152718, 0.8179879)
+Tre<-c(0.9678431, 0.9721259)
+RFo<-c(0.9905882, 0.9901334)
+
+Nam<-c("Pre CV", "Post CV")
+
+dataplot <- data.frame(Nam, Log, Dis, Tre, RFo)
+dataplot$Nam <- factor(dataplot$Nam, levels = c("Pre CV", "Post CV"))
+```
+
+```{r}
+require(plotly)
+p <- plot_ly(dataplot, x = ~Nam, y = ~Log, name = 'Logistic Regression', type = 'scatter', mode = 'lines',
+             line = list(color = 'rgb(205, 12, 24)', width = 4)) %>%
+  add_trace(y = ~Dis, name = 'Discriminant analysis', line = list(color = 'rgb(22, 96, 167)', width = 4)) %>%
+  add_trace(y = ~Tre, name = 'Decision Tree', line = list(color = 'Green', width = 4)) %>%
+  add_trace(y = ~RFo, name = 'Random Forest', line = list(color = 'Orange', width = 4)) %>%
+  layout(title = "Comparison Pre-Post Cross-Validation", xaxis = list(title = "Cross-Validation"), yaxis = list (title = "Accuracy"))
+p
+```
+
+Conclusion
+Data visualisation
+Recomendations
+Conclusion
