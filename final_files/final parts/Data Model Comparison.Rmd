@@ -9,9 +9,9 @@ In the four techniques we have selected, these are the accuracy of each one:
 
 -Discriminant Analysis 0.8152718
 
--Decision Tree 0.967843137254902
+-Decision Tree 0.9678431
 
--Random Forest 0.990588235294118
+-Random Forest 0.9905882
 
 We have to be careful with the overfitting, though. The overfitting, as the same name says, happen when a model is overtrained to a specific dataset which we know the results. The consequence is that the model predicts almost perfectly the specific data we have, but performs poorly with other data. Because of that, the accuracy of that model is not real, and because of that, we have to avoid the overfitting as we can. 
 
@@ -20,6 +20,51 @@ We have to be careful with the overfitting, though. The overfitting, as the same
 
 -Discriminant Analysis 0.8179879
 
--Decision Tree
+-Decision Tree 0.9721259
 
--Random Forest
+-Random Forest 0.9901334
+
+Difference accuracy cross-validation and raw
+
+
+Random Forest 
+
+9899 samples
+  10 predictor
+   2 classes: '0', '1' 
+
+No pre-processing
+Resampling: Cross-Validated (10 fold, repeated 3 times) 
+Summary of sample sizes: 8909, 8909, 8908, 8909, 8909, 8910, ... 
+Resampling results across tuning parameters:
+
+  mtry  Accuracy   Kappa    
+   2    0.9745762  0.9273550
+  10    0.9901334  0.9723405
+  19    0.9888539  0.9688391
+
+Accuracy was used to select the optimal model using the largest value.
+The final value used for the model was mtry = 10.
+```{r}
+Log<-c(0.865288, 0.8717694)
+Dis<-c(0.8152718, 0.8179879)
+Tre<-c(0.9678431, 0.9721259)
+RFo<-c(0.9905882, 0.9901334)
+
+Nam<-c("Pre CV", "Post CV")
+
+dataplot <- data.frame(Nam, Log, Dis, Tre, RFo)
+dataplot$Nam <- factor(dataplot$Nam, levels = c("Pre CV", "Post CV"))
+```
+
+```{r}
+require(plotly)
+p <- plot_ly(dataplot, x = ~Nam, y = ~Log, name = 'Logistic Regression', type = 'scatter', mode = 'lines',
+             line = list(color = 'rgb(205, 12, 24)', width = 4)) %>%
+  add_trace(y = ~Dis, name = 'Discriminant analysis', line = list(color = 'rgb(22, 96, 167)', width = 4)) %>%
+  add_trace(y = ~Tre, name = 'Decision Tree', line = list(color = 'Green', width = 4)) %>%
+  add_trace(y = ~RFo, name = 'Random Forest', line = list(color = 'Orange', width = 4)) %>%
+  layout(title = "Comparison Pre-Post Cross-Validation", xaxis = list(title = "Cross-Validation"), yaxis = list (title = "Accuracy"))
+p
+```
+
